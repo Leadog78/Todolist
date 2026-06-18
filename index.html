@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0b0e1a" />
+  <title>PERFECT SEASON — Draft Legends, Chase 82–0</title>
+  <meta name="description" content="Draft 5 basketball legends, build chemistry, and simulate a season. Can your roster go 82–0?" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ===================== HOME ===================== -->
+    <section id="screen-home" class="screen active">
+      <div class="home-inner">
+        <h1 class="logo">PERFECT<span>SEASON</span></h1>
+        <p class="tagline">Draft five legends. Build chemistry. Chase the impossible&nbsp;<b>82–0</b>.</p>
+
+        <div class="mode-buttons">
+          <button class="btn btn-primary" id="btn-daily">
+            <span class="btn-title">Daily Challenge</span>
+            <span class="btn-sub" id="daily-label">Everyone drafts the same teams today</span>
+          </button>
+          <button class="btn btn-secondary" id="btn-endless">
+            <span class="btn-title">Endless Mode</span>
+            <span class="btn-sub">Fresh random draft, play forever</span>
+          </button>
+        </div>
+
+        <div class="records" id="home-records"></div>
+
+        <button class="link-btn" id="btn-how">How to play</button>
+      </div>
+    </section>
+
+    <!-- ===================== HOW TO PLAY ===================== -->
+    <section id="screen-how" class="screen">
+      <div class="panel">
+        <h2>How to play</h2>
+        <ol class="how-list">
+          <li><b>Spin the franchise.</b> Each round the wheel deals you a team. Pick <b>one</b> of its legends.</li>
+          <li><b>Fill all five spots</b> — PG, SG, SF, PF, C. Play someone out of position and they lose effectiveness.</li>
+          <li><b>Build chemistry.</b> You need spacing, a playmaker, and a rim protector. Stacking ball-dominant scorers backfires.</li>
+          <li><b>Use your tokens.</b> <b>Reroll</b> deals a new team; the one-time <b>Wildcard</b> lets you draft <i>any</i> legend.</li>
+          <li><b>Simulate 82 games.</b> Watch it play out and see your record, grade, MVP, and biggest weakness.</li>
+        </ol>
+        <p class="how-foot">Goal: construct the rare roster that runs the table at <b>82–0</b>.</p>
+        <button class="btn btn-primary" id="btn-how-back">Got it</button>
+      </div>
+    </section>
+
+    <!-- ===================== DRAFT ===================== -->
+    <section id="screen-draft" class="screen">
+      <header class="draft-header">
+        <button class="icon-btn" id="btn-quit" title="Quit to menu">✕</button>
+        <div class="draft-progress">
+          <span id="pick-label">Pick 1 / 5</span>
+          <div class="tokens">
+            <span class="token" id="token-reroll">🔄 <b id="reroll-count">3</b></span>
+            <span class="token" id="token-wild">⭐ <b id="wild-count">1</b></span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Court with the 5 lineup slots -->
+      <div class="court" id="court"></div>
+
+      <!-- Slot machine + candidate cards -->
+      <div class="draft-floor">
+        <div class="spinner" id="spinner">
+          <span class="spinner-label">NOW DRAFTING</span>
+          <span class="spinner-team" id="spinner-team">—</span>
+        </div>
+
+        <div class="candidates" id="candidates"></div>
+
+        <div class="draft-actions">
+          <button class="btn btn-token" id="btn-reroll">🔄 Reroll team</button>
+          <button class="btn btn-token" id="btn-wild">⭐ Wildcard pick</button>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-sim" id="btn-sim" disabled>Simulate Season</button>
+    </section>
+
+    <!-- ===================== WILDCARD PICKER ===================== -->
+    <section id="screen-wild" class="screen">
+      <div class="panel wild-panel">
+        <h2>⭐ Wildcard — draft any legend</h2>
+        <input type="text" id="wild-search" class="wild-search" placeholder="Search by name or team…" />
+        <div class="wild-list" id="wild-list"></div>
+        <button class="btn btn-secondary" id="btn-wild-cancel">Cancel</button>
+      </div>
+    </section>
+
+    <!-- ===================== SIMULATION ===================== -->
+    <section id="screen-sim" class="screen">
+      <div class="sim-inner">
+        <div class="sim-record">
+          <span id="sim-wins">0</span><span class="dash">–</span><span id="sim-losses">0</span>
+        </div>
+        <div class="sim-bar"><div class="sim-bar-fill" id="sim-bar-fill"></div></div>
+        <div class="sim-grid" id="sim-grid"></div>
+        <p class="sim-status" id="sim-status">Tip-off…</p>
+      </div>
+    </section>
+
+    <!-- ===================== RESULTS ===================== -->
+    <section id="screen-result" class="screen">
+      <div class="result-inner">
+        <div class="grade-badge" id="grade-badge"></div>
+        <div class="result-record" id="result-record"></div>
+        <div class="result-title" id="result-title"></div>
+
+        <div class="result-lineup" id="result-lineup"></div>
+
+        <div class="result-stats">
+          <div class="stat"><span class="stat-k">MVP</span><span class="stat-v" id="result-mvp">—</span></div>
+          <div class="stat"><span class="stat-k">Chemistry</span><span class="stat-v" id="result-chem">—</span></div>
+          <div class="stat"><span class="stat-k">Best streak</span><span class="stat-v" id="result-streak">—</span></div>
+          <div class="stat"><span class="stat-k">Weakness</span><span class="stat-v" id="result-weak">—</span></div>
+        </div>
+
+        <details class="chem-details">
+          <summary>Chemistry breakdown</summary>
+          <ul id="chem-list"></ul>
+        </details>
+
+        <div class="result-actions">
+          <button class="btn btn-primary" id="btn-share">Share result</button>
+          <button class="btn btn-secondary" id="btn-again">Play again</button>
+          <button class="link-btn" id="btn-home">Main menu</button>
+        </div>
+        <p class="share-toast" id="share-toast"></p>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="data.js"></script>
+  <script src="engine.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
