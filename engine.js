@@ -71,10 +71,12 @@ function pickWeighted(items, weightFn, rng) {
 
 function spinPool(state) {
   const all = availableCombos(state);
-  // Prefer combos that actually have a roster to choose from. Fall back to
-  // smaller ones only if nothing deeper remains (late in a draft).
-  let combos = all.filter((c) => c.candidates.length >= 3);
-  if (!combos.length) combos = all.filter((c) => c.candidates.length >= 2);
+  // Prefer deep, believable rosters. Step the bar down only if a draft has
+  // thinned the pool late on.
+  let combos =
+    all.filter((c) => c.candidates.length >= 8);
+  if (!combos.length) combos = all.filter((c) => c.candidates.length >= 5);
+  if (!combos.length) combos = all.filter((c) => c.candidates.length >= 3);
   if (!combos.length) combos = all;
 
   // Group by decade; roll a decade (weighted by how stacked it is), then a

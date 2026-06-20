@@ -28,7 +28,7 @@ python3 -m http.server 8000   # then visit http://localhost:8000
 - **🕶️ Pro Scout Mode** (toggle) — hides all stats *and* the archetype label. You draft on **name, team, era, position and listed height** alone. For players who actually know their hoops history.
 
 ### About the database
-~150 legends spanning the **1960s–2020s**, every one with a listed height. Many stars appear as multiple **era-specific versions** — 2000s Cavs LeBron, 2010s Heat LeBron and 2020s Lakers LeBron are different cards with different ratings — so which era you roll genuinely matters. You can only draft a given name once.
+**~600 players across 58 real team-eras**, spanning the **1960s–2020s** — each team-era is a believable 10–14-man rotation (stars *and* genuine role players), every one with a listed height. Because most of a roster is role players, picking well is genuinely hard, especially in Pro Mode. Many stars appear as multiple **era-specific versions** — 2000s Cavs LeBron, 2010s Heat LeBron and 2020s Lakers LeBron are different cards with different ratings — so which era you roll matters. You can only draft a given name once.
 
 ## How it's different from / better than 82-0
 
@@ -49,7 +49,7 @@ The chemistry engine is the heart of it: even an all-GOAT lineup (Magic / Jordan
 |---|---|
 | `index.html` | Markup & screen scaffolding |
 | `styles.css` | All styling (dark theme, responsive, mobile-first) |
-| `data.js` | Bundled legend dataset (~150 players, all eras), franchises, era pace factors |
+| `data.js` | Bundled dataset (~600 players, 58 deep team-era rosters), era pace factors |
 | `engine.js` | Seeded RNG, era+team draft pool, chemistry rules, season simulation |
 | `game.js` | UI controller / state machine (incl. Pro Scout Mode) |
 
