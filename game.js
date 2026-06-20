@@ -48,10 +48,11 @@
       pick: 0,
       rerolls: 3,
       wild: 1,
-      current: null, // { team, candidates }
+      current: null, // { decade, team, candidates }
       openPos: null, // currently expanded card index
+      pro: !!$("pro-toggle").checked, // Pro Scout Mode hides stats
     };
-    state.current = spinTeam(state);
+    state.current = spinPool(state);
     renderDraft(true);
     show("screen-draft");
   }
@@ -90,21 +91,29 @@
     const open = openSlots();
     const card = document.createElement("div");
     card.className = "pcard";
-    card.innerHTML = `
-      <div class="pcard-top">
-        <div>
-          <div class="pcard-name">${player.n}</div>
-          <div class="pcard-meta">${player.t} · ${player.d} · <span class="pcard-arch">${player.a}</span></div>
-        </div>
-        <div class="pcard-pos">${player.p.map((p) => `<span class="pos-pill">${p}</span>`).join("")}</div>
-      </div>
-      <div class="ratings">
+    // Pro Scout Mode: hide ratings AND the archetype — you draft on
+    // name, team, era, position and listed height alone.
+    const meta = state.pro
+      ? `${formatHeight(player.hi)} · ${player.t} · ${player.d}`
+      : `${formatHeight(player.hi)} · ${player.t} · ${player.d} · <span class="pcard-arch">${player.a}</span>`;
+    const body = state.pro
+      ? `<div class="scout-note">🕶️ Scout's report only — trust your eye.</div>`
+      : `<div class="ratings">
         ${ratingCell("o", "OFF", player.o)}
         ${ratingCell("df", "DEF", player.df)}
         ${ratingCell("pm", "PLY", player.pm)}
         ${ratingCell("rb", "REB", player.rb)}
         ${ratingCell("sh", "SHO", player.sh)}
+      </div>`;
+    card.innerHTML = `
+      <div class="pcard-top">
+        <div>
+          <div class="pcard-name">${player.n}</div>
+          <div class="pcard-meta">${meta}</div>
+        </div>
+        <div class="pcard-pos">${player.p.map((p) => `<span class="pos-pill">${p}</span>`).join("")}</div>
       </div>
+      ${body}
       <div class="pos-choose">
         ${POSITIONS.map((pos, i) => {
           const filled = !!state.roster[i];
@@ -154,13 +163,14 @@
     renderCourt();
     renderTokens();
     $("btn-sim").disabled = state.pick < 5;
+    const label = `${state.current.decade} · ${state.current.team}`;
     if (animate) {
       animateSpin(() => {
-        $("spinner-team").textContent = state.current.team;
+        $("spinner-team").textContent = label;
         renderCandidates();
       });
     } else {
-      $("spinner-team").textContent = state.current.team;
+      $("spinner-team").textContent = label;
       renderCandidates();
     }
   }
@@ -171,7 +181,9 @@
     spinner.classList.add("spinning");
     let ticks = 0;
     const iv = setInterval(() => {
-      teamEl.textContent = TEAMS[Math.floor(Math.random() * TEAMS.length)];
+      const d = DECADES[Math.floor(Math.random() * DECADES.length)];
+      const t = TEAMS[Math.floor(Math.random() * TEAMS.length)];
+      teamEl.textContent = `${d} · ${t}`;
       if (++ticks > 10) {
         clearInterval(iv);
         spinner.classList.remove("spinning");
@@ -193,7 +205,7 @@
       $("btn-reroll").disabled = true;
       $("btn-wild").disabled = true;
     } else {
-      state.current = spinTeam(state);
+      state.current = spinPool(state);
       renderDraft(true);
     }
   }
@@ -403,11 +415,17 @@
       .map((c) => `<div class="record-chip"><div class="rc-v">${c[1]}</div><div class="rc-k">${c[0]}</div></div>`)
       .join("");
     $("daily-label").textContent = `Today · ${todayKey()}`;
+    $("pro-toggle").checked = !!store.proMode;
   }
 
   // ====================== wiring ======================
   $("btn-daily").addEventListener("click", () => newGame("daily"));
   $("btn-endless").addEventListener("click", () => newGame("endless"));
+  $("pro-toggle").addEventListener("change", (e) => {
+    const s = loadStore();
+    s.proMode = e.target.checked;
+    saveStore(s);
+  });
   $("btn-how").addEventListener("click", () => show("screen-how"));
   $("btn-how-back").addEventListener("click", () => { renderHome(); show("screen-home"); });
   $("btn-quit").addEventListener("click", () => { renderHome(); show("screen-home"); });
