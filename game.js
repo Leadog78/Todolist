@@ -343,6 +343,35 @@
     $("result-streak").textContent = r.longestWin + " wins";
     $("result-weak").textContent = r.weakness;
 
+    // Pro Scout Mode payoff — reveal the ratings you drafted blind.
+    const reveal = $("scout-reveal");
+    if (state.pro) {
+      const list = $("reveal-list");
+      list.innerHTML = "";
+      POSITIONS.forEach((pos, i) => {
+        const p = state.roster[i].player;
+        const row = document.createElement("div");
+        row.className = "reveal-row";
+        const cell = (label, val) => {
+          const cls = val >= 86 ? "hi" : val < 68 ? "lo" : "";
+          return `<span class="rv ${cls}" title="${label}">${val}</span>`;
+        };
+        row.innerHTML = `
+          <div class="reveal-id">
+            <span class="reveal-pos">${pos}</span>
+            <span class="reveal-name">${p.n}</span>
+            <span class="reveal-meta">${formatHeight(p.hi)} · ${p.a}</span>
+          </div>
+          <div class="reveal-ratings">
+            ${cell("Offense", p.o)}${cell("Defense", p.df)}${cell("Playmaking", p.pm)}${cell("Rebounding", p.rb)}${cell("Shooting", p.sh)}
+          </div>`;
+        list.appendChild(row);
+      });
+      reveal.hidden = false;
+    } else {
+      reveal.hidden = true;
+    }
+
     const cl = $("chem-list");
     cl.innerHTML = "";
     r.chem.breakdown

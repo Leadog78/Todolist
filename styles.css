@@ -414,6 +414,34 @@ html, body {
 .stat-k { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
 .stat-v { font-size: 15px; font-weight: 800; }
 
+/* Pro Scout Mode reveal */
+.scout-reveal {
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  text-align: left;
+  animation: fade 0.4s ease;
+}
+.scout-reveal h3 { margin: 0 0 10px; font-size: 14px; color: var(--gold); }
+.reveal-list { display: flex; flex-direction: column; gap: 8px; }
+.reveal-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.reveal-id { display: flex; flex-direction: column; min-width: 0; }
+.reveal-id .reveal-pos { font-size: 10px; font-weight: 800; color: var(--accent2); }
+.reveal-id .reveal-name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reveal-id .reveal-meta { font-size: 10px; color: var(--muted); }
+.reveal-ratings { display: flex; gap: 4px; flex: 0 0 auto; }
+.reveal-ratings .rv {
+  width: 26px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  border-radius: 5px;
+  padding: 3px 0;
+  background: var(--panel2);
+}
+
 .chem-details { background: var(--panel); border-radius: 10px; padding: 4px 14px; margin-bottom: 18px; text-align: left; }
 .chem-details summary { cursor: pointer; padding: 10px 0; font-weight: 700; }
 .chem-details ul { list-style: none; padding: 0; margin: 0 0 12px; }
