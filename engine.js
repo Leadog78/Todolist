@@ -36,16 +36,57 @@ function shuffle(arr, rng) {
   return a;
 }
 
-/* ---- Spin: pick a franchise and offer its undrafted legends --------------*/
-function spinTeam(state) {
-  // Teams that still have at least one undrafted player.
+/* ---- Spin: roll a random era + franchise and offer that roster ------------
+ * Mirrors 82-0's slot machine: a decade is rolled first, then a team within
+ * that decade (weighted toward richer rosters), and you choose from the
+ * legends that played for that team in that era. A player can only be drafted
+ * once, so all era-versions of a drafted name are removed from the pool. */
+function availableCombos(state) {
   const taken = new Set(state.roster.filter(Boolean).map((r) => r.player.n));
-  const available = TEAMS.filter((t) =>
-    PLAYERS.some((p) => p.t === t && !taken.has(p.n))
-  );
-  const team = available[Math.floor(state.rng() * available.length)];
-  const candidates = PLAYERS.filter((p) => p.t === team && !taken.has(p.n));
-  return { team, candidates: shuffle(candidates, state.rng) };
+  const map = new Map();
+  for (const p of PLAYERS) {
+    if (taken.has(p.n)) continue;
+    const key = p.d + "|" + p.t;
+    if (!map.has(key)) map.set(key, { decade: p.d, team: p.t, candidates: [] });
+    map.get(key).candidates.push(p);
+  }
+  return [...map.values()];
+}
+
+// Weight a roster by size so fuller team-eras come up more often and you
+// usually get a real choice (a lone-legend roster still appears sometimes).
+function comboWeight(c) {
+  return c.candidates.length * c.candidates.length;
+}
+
+function pickWeighted(items, weightFn, rng) {
+  const total = items.reduce((s, it) => s + weightFn(it), 0);
+  let r = rng() * total;
+  for (const it of items) {
+    r -= weightFn(it);
+    if (r <= 0) return it;
+  }
+  return items[items.length - 1];
+}
+
+function spinPool(state) {
+  const combos = availableCombos(state);
+  // Group by decade; roll a decade (weighted by how stacked it is), then a
+  // team within it (weighted toward deeper rosters).
+  const byDecade = {};
+  for (const c of combos) (byDecade[c.decade] = byDecade[c.decade] || []).push(c);
+  const decadeGroups = Object.entries(byDecade).map(([decade, teamCombos]) => ({
+    decade,
+    teamCombos,
+    candidates: teamCombos.flatMap((c) => c.candidates),
+  }));
+  const group = pickWeighted(decadeGroups, comboWeight, state.rng);
+  const chosen = pickWeighted(group.teamCombos, comboWeight, state.rng);
+  return {
+    decade: group.decade,
+    team: chosen.team,
+    candidates: shuffle(chosen.candidates, state.rng),
+  };
 }
 
 /* ---- Position fit ---------------------------------------------------------

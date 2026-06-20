@@ -16,11 +16,19 @@ python3 -m http.server 8000   # then visit http://localhost:8000
 
 ## How it works
 
-1. **Spin the franchise.** Each round a slot machine deals you a team. Draft **one** of its legends.
+1. **Spin the era + franchise.** Each round the slot machine rolls a random **decade and team** (e.g. `1990s · Bulls`, `2020s · Nuggets`). Draft **one** of the legends who played there.
 2. **Fill all five spots** — PG, SG, SF, PF, C. Play someone out of position and they lose effectiveness.
 3. **Build chemistry.** Spacing, a real playmaker, and a rim protector all matter. Stacking ball-dominant scorers backfires.
-4. **Spend your tokens.** **Reroll** (×3) deals a new team; the one-time **Wildcard** (×1) lets you draft *any* legend.
+4. **Spend your tokens.** **Reroll** (×3) deals a new era+team; the one-time **Wildcard** (×1) lets you draft *any* legend.
 5. **Simulate 82 games** and see your record, letter grade, MVP, best win streak, and biggest weakness.
+
+### Modes & options
+- **Daily Challenge** — seeded so everyone gets the same draft each day.
+- **Endless Mode** — fresh random draft every time.
+- **🕶️ Pro Scout Mode** (toggle) — hides all stats *and* the archetype label. You draft on **name, team, era, position and listed height** alone. For players who actually know their hoops history.
+
+### About the database
+~150 legends spanning the **1960s–2020s**, every one with a listed height. Many stars appear as multiple **era-specific versions** — 2000s Cavs LeBron, 2010s Heat LeBron and 2020s Lakers LeBron are different cards with different ratings — so which era you roll genuinely matters. You can only draft a given name once.
 
 ## How it's different from / better than 82-0
 
@@ -41,9 +49,9 @@ The chemistry engine is the heart of it: even an all-GOAT lineup (Magic / Jordan
 |---|---|
 | `index.html` | Markup & screen scaffolding |
 | `styles.css` | All styling (dark theme, responsive, mobile-first) |
-| `data.js` | Bundled legend dataset, franchises, era pace factors |
-| `engine.js` | Seeded RNG, draft pool, chemistry rules, season simulation |
-| `game.js` | UI controller / state machine |
+| `data.js` | Bundled legend dataset (~150 players, all eras), franchises, era pace factors |
+| `engine.js` | Seeded RNG, era+team draft pool, chemistry rules, season simulation |
+| `game.js` | UI controller / state machine (incl. Pro Scout Mode) |
 
 The simulation is **seeded** (`mulberry32`), so the Daily Challenge is identical for everyone on a given date and results are reproducible.
 
