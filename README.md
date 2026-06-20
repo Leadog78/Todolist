@@ -2,17 +2,15 @@
 
 **Draft five basketball legends, build chemistry, and simulate an 82-game season. Can your roster go a perfect 82–0?**
 
-A fast, polished, fully self-contained web game inspired by [82-0.com](https://www.82-0.com) — but rebuilt to be deeper, more transparent, and more replayable. No backend, no build step, no dependencies. Just open `index.html`.
+A fast, polished, fully self-contained web game inspired by [82-0.com](https://www.82-0.com) — but rebuilt to be deeper, more transparent, and more replayable. The **entire game is one file** (`index.html`) — no backend, no build step, no dependencies, nothing to install.
 
 > This is a non-commercial fan project. Player ratings are subjective approximations on a "legend scale" and are meant for fun.
 
 ## Play
 
-Open `index.html` in any modern browser, or serve the folder:
+**Just double-click `index.html`** — it opens in any browser and runs completely offline. Everything (styles, game logic, the full player database) is baked into that single file, so it works even if you open it straight out of a download folder.
 
-```bash
-python3 -m http.server 8000   # then visit http://localhost:8000
-```
+> Downloaded the repo as a ZIP? You don't even need to unzip everything — `index.html` is fully standalone. (To serve it instead: `python3 -m http.server 8000`.)
 
 ## How it works
 
@@ -45,13 +43,7 @@ The chemistry engine is the heart of it: even an all-GOAT lineup (Magic / Jordan
 
 ## Project structure
 
-| File | Responsibility |
-|---|---|
-| `index.html` | Markup & screen scaffolding |
-| `styles.css` | All styling (dark theme, responsive, mobile-first) |
-| `data.js` | Bundled dataset (~600 players, 58 deep team-era rosters), era pace factors |
-| `engine.js` | Seeded RNG, era+team draft pool, chemistry rules, season simulation |
-| `game.js` | UI controller / state machine (incl. Pro Scout Mode) |
+The whole game ships as a **single self-contained `index.html`** — markup, all styling (dark theme, responsive, mobile-first), the ~600-player database, the seeded RNG + chemistry + season-simulation engine, and the UI controller (including Pro Scout Mode) are all inlined into that one file. That's what makes it openable anywhere with zero setup.
 
 The simulation is **seeded** (`mulberry32`), so the Daily Challenge is identical for everyone on a given date and results are reproducible.
 

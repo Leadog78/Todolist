@@ -6,7 +6,467 @@
   <meta name="theme-color" content="#0b0e1a" />
   <title>PERFECT SEASON — Draft Legends, Chase 82–0</title>
   <meta name="description" content="Draft 5 basketball legends, build chemistry, and simulate a season. Can your roster go 82–0?" />
-  <link rel="stylesheet" href="styles.css" />
+  <style>
+/* ============================================================================
+ * PERFECT SEASON — styles
+ * ==========================================================================*/
+:root {
+  --bg: #0b0e1a;
+  --bg2: #131830;
+  --panel: #1a2142;
+  --panel2: #222a52;
+  --ink: #eef1ff;
+  --muted: #8b93c4;
+  --accent: #ff7a18;
+  --accent2: #ffb347;
+  --good: #34d399;
+  --bad: #f87171;
+  --line: #2c3463;
+  --gold: #ffd24a;
+  --radius: 16px;
+  --shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #1d2147 0%, transparent 60%),
+    radial-gradient(900px 500px at 100% 110%, #20183a 0%, transparent 55%),
+    var(--bg);
+  color: var(--ink);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  max-width: 540px;
+  margin: 0 auto;
+  min-height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ---- screen switching ---- */
+.screen {
+  display: none;
+  padding: 20px;
+  min-height: 100vh;
+  flex-direction: column;
+  animation: fade 0.3s ease;
+}
+.screen.active { display: flex; }
+@keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* ---- buttons ---- */
+.btn {
+  border: none;
+  border-radius: 14px;
+  padding: 16px 18px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform 0.08s ease, filter 0.15s ease, opacity 0.15s ease;
+  font-family: inherit;
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #1a1100;
+  box-shadow: 0 8px 24px rgba(255, 122, 24, 0.35);
+}
+.btn-secondary { background: var(--panel2); }
+.btn-token {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  font-size: 14px;
+  padding: 12px 14px;
+  flex: 1;
+}
+.btn-token:disabled { opacity: 0.35; }
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 18px;
+  font-family: inherit;
+}
+.icon-btn {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* ===================== HOME ===================== */
+#screen-home { justify-content: center; align-items: center; text-align: center; }
+.home-inner { width: 100%; max-width: 420px; }
+.logo {
+  font-size: 44px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  line-height: 0.92;
+  margin: 0 0 4px;
+}
+.logo span {
+  display: block;
+  background: linear-gradient(135deg, var(--accent), var(--gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.tagline { color: var(--muted); font-size: 15px; margin: 8px 0 34px; line-height: 1.5; }
+.mode-buttons { display: flex; flex-direction: column; gap: 14px; }
+.mode-buttons .btn { display: flex; flex-direction: column; gap: 3px; text-align: left; }
+.btn-title { font-size: 18px; }
+.btn-sub { font-size: 12px; font-weight: 500; opacity: 0.8; }
+/* Pro Scout Mode toggle */
+.pro-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: 14px;
+  cursor: pointer;
+  text-align: left;
+}
+.pro-toggle input { display: none; }
+.pro-switch {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 26px;
+  border-radius: 14px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  position: relative;
+  transition: background 0.2s;
+}
+.pro-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 0.2s, background 0.2s;
+}
+.pro-toggle input:checked + .pro-switch { background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+.pro-toggle input:checked + .pro-switch::after { transform: translateX(18px); background: #1a1100; }
+.pro-text { display: flex; flex-direction: column; gap: 2px; }
+.pro-text b { font-size: 14px; }
+.pro-text small { font-size: 11px; color: var(--muted); }
+
+.scout-note {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  background: var(--panel2);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.records {
+  margin-top: 26px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.record-chip {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 92px;
+}
+.record-chip .rc-v { font-size: 20px; font-weight: 800; color: var(--gold); }
+.record-chip .rc-k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ===================== PANELS (how / wild) ===================== */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin: auto 0;
+  box-shadow: var(--shadow);
+}
+.panel h2 { margin-top: 0; }
+.how-list { padding-left: 20px; line-height: 1.6; color: var(--ink); }
+.how-list li { margin-bottom: 12px; }
+.how-list b { color: var(--accent2); }
+.how-foot { color: var(--muted); text-align: center; margin: 18px 0 22px; }
+
+/* ===================== DRAFT ===================== */
+.draft-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.draft-progress { flex: 1; display: flex; justify-content: space-between; align-items: center; }
+#pick-label { font-weight: 800; font-size: 15px; }
+.tokens { display: flex; gap: 10px; }
+.token {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+.token b { color: var(--gold); }
+
+/* court */
+.court {
+  position: relative;
+  background:
+    repeating-linear-gradient(90deg, transparent, transparent 30px, rgba(255,255,255,0.02) 31px),
+    linear-gradient(180deg, #2a1c10, #3a2614);
+  border: 2px solid #5a3d22;
+  border-radius: 12px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.court::before {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0; left: 50%;
+  width: 2px; background: rgba(255,255,255,0.08);
+}
+.slot {
+  background: rgba(0,0,0,0.25);
+  border: 1.5px dashed #6b4a2a;
+  border-radius: 10px;
+  min-height: 78px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 6px 4px;
+  position: relative;
+}
+.slot .slot-pos { font-size: 12px; font-weight: 800; color: var(--accent2); }
+.slot .slot-empty { font-size: 10px; color: var(--muted); margin-top: 4px; }
+.slot.filled { border-style: solid; border-color: var(--accent); background: rgba(255,122,24,0.12); }
+.slot .slot-name { font-size: 11px; font-weight: 700; line-height: 1.15; margin-top: 3px; }
+.slot .slot-era { font-size: 9px; color: var(--muted); }
+.slot.target { box-shadow: 0 0 0 2px var(--gold) inset; }
+
+/* slot machine */
+.draft-floor { flex: 1; display: flex; flex-direction: column; }
+.spinner {
+  text-align: center;
+  background: linear-gradient(135deg, var(--panel2), var(--panel));
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+.spinner-label { display: block; font-size: 11px; letter-spacing: 2px; color: var(--muted); }
+.spinner-team {
+  display: block;
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--gold);
+  min-height: 32px;
+}
+.spinner.spinning .spinner-team { animation: flick 0.08s steps(1) infinite; }
+@keyframes flick { 50% { opacity: 0.4; } }
+
+.candidates { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.pcard {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.08s;
+}
+.pcard:active { transform: scale(0.99); }
+.pcard.open { border-color: var(--accent); }
+.pcard-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.pcard-name { font-weight: 800; font-size: 15px; }
+.pcard-meta { font-size: 11px; color: var(--muted); }
+.pcard-arch { font-size: 11px; color: var(--accent2); font-weight: 600; }
+.pcard-pos { display: flex; gap: 4px; }
+.pos-pill {
+  font-size: 10px;
+  font-weight: 800;
+  background: var(--panel2);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+.ratings { display: flex; gap: 6px; margin-top: 8px; }
+.rbar { flex: 1; text-align: center; }
+.rbar .rk { font-size: 9px; color: var(--muted); }
+.rbar .rv {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  border-radius: 5px;
+  padding: 2px 0;
+  margin-top: 2px;
+  background: var(--panel2);
+}
+.rv.hi { color: var(--good); }
+.rv.lo { color: var(--bad); }
+
+/* position chooser shown after tapping a card */
+.pos-choose { display: none; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.pcard.open .pos-choose { display: flex; }
+.pos-choose .pc-btn {
+  flex: 1;
+  min-width: 56px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 8px 4px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.pos-choose .pc-btn:disabled { opacity: 0.3; }
+.pos-choose .pc-btn.natural { border-color: var(--good); color: var(--good); }
+.pos-choose .pc-btn.off { border-color: var(--bad); }
+
+.draft-actions { display: flex; gap: 10px; margin-bottom: 12px; }
+.btn-sim { margin-top: auto; }
+
+/* ===================== WILDCARD ===================== */
+.wild-panel { max-height: 86vh; display: flex; flex-direction: column; }
+.wild-search {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  color: var(--ink);
+  font-size: 15px;
+  margin-bottom: 12px;
+  font-family: inherit;
+}
+.wild-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+
+/* ===================== SIMULATION ===================== */
+#screen-sim { justify-content: center; align-items: center; text-align: center; }
+.sim-inner { width: 100%; max-width: 420px; }
+.sim-record { font-size: 56px; font-weight: 900; letter-spacing: -2px; }
+.sim-record .dash { color: var(--muted); margin: 0 6px; }
+#sim-wins { color: var(--good); }
+#sim-losses { color: var(--bad); }
+.sim-bar {
+  height: 10px;
+  background: var(--bad);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 16px 0 22px;
+}
+.sim-bar-fill { height: 100%; width: 0; background: var(--good); transition: width 0.1s linear; }
+.sim-grid {
+  display: grid;
+  grid-template-columns: repeat(14, 1fr);
+  gap: 4px;
+  margin-bottom: 18px;
+}
+.gcell { aspect-ratio: 1; border-radius: 3px; background: var(--panel); transform: scale(0); transition: transform 0.12s ease; }
+.gcell.show { transform: scale(1); }
+.gcell.w { background: var(--good); }
+.gcell.l { background: var(--bad); }
+.sim-status { color: var(--muted); font-weight: 600; min-height: 22px; }
+
+/* ===================== RESULTS ===================== */
+#screen-result { justify-content: center; }
+.result-inner { width: 100%; max-width: 440px; margin: auto; text-align: center; }
+.grade-badge {
+  width: 96px; height: 96px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; font-weight: 900;
+  border: 3px solid var(--line);
+  background: var(--panel);
+}
+.grade-badge.perfect { font-size: 22px; background: linear-gradient(135deg, var(--gold), var(--accent)); color: #1a1100; border-color: var(--gold); box-shadow: 0 0 30px rgba(255,210,74,0.6); }
+.grade-badge.s { color: var(--gold); border-color: var(--gold); }
+.grade-badge.a { color: var(--good); border-color: var(--good); }
+.grade-badge.b { color: #60a5fa; border-color: #60a5fa; }
+.grade-badge.c { color: var(--accent2); border-color: var(--accent2); }
+.grade-badge.d, .grade-badge.f { color: var(--bad); border-color: var(--bad); }
+.result-record { font-size: 40px; font-weight: 900; }
+.result-title { color: var(--muted); margin-bottom: 18px; font-weight: 600; }
+
+.result-lineup { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 18px; }
+.rl-slot { background: var(--panel); border-radius: 8px; padding: 8px 4px; border: 1px solid var(--line); }
+.rl-slot .rl-pos { font-size: 10px; font-weight: 800; color: var(--accent2); }
+.rl-slot .rl-name { font-size: 10px; font-weight: 700; line-height: 1.15; margin-top: 3px; }
+.rl-slot .rl-fit { font-size: 13px; margin-top: 3px; }
+
+.result-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.stat { background: var(--panel); border-radius: 10px; padding: 10px; text-align: left; }
+.stat-k { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-v { font-size: 15px; font-weight: 800; }
+
+/* Pro Scout Mode reveal */
+.scout-reveal {
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  text-align: left;
+  animation: fade 0.4s ease;
+}
+.scout-reveal h3 { margin: 0 0 10px; font-size: 14px; color: var(--gold); }
+.reveal-list { display: flex; flex-direction: column; gap: 8px; }
+.reveal-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.reveal-id { display: flex; flex-direction: column; min-width: 0; }
+.reveal-id .reveal-pos { font-size: 10px; font-weight: 800; color: var(--accent2); }
+.reveal-id .reveal-name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reveal-id .reveal-meta { font-size: 10px; color: var(--muted); }
+.reveal-ratings { display: flex; gap: 4px; flex: 0 0 auto; }
+.reveal-ratings .rv {
+  width: 26px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  border-radius: 5px;
+  padding: 3px 0;
+  background: var(--panel2);
+}
+
+.chem-details { background: var(--panel); border-radius: 10px; padding: 4px 14px; margin-bottom: 18px; text-align: left; }
+.chem-details summary { cursor: pointer; padding: 10px 0; font-weight: 700; }
+.chem-details ul { list-style: none; padding: 0; margin: 0 0 12px; }
+.chem-details li { display: flex; justify-content: space-between; padding: 6px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.chem-details li .cd { font-weight: 800; }
+.chem-details li.good .cd { color: var(--good); }
+.chem-details li.bad .cd { color: var(--bad); }
+
+.result-actions { display: flex; flex-direction: column; gap: 10px; }
+.share-toast { color: var(--good); font-weight: 700; min-height: 20px; margin-top: 10px; }
+
+/* confetti */
+.confetti { position: fixed; top: -10px; width: 9px; height: 14px; opacity: 0.9; z-index: 50; pointer-events: none; }
+@keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+
+</style>
 </head>
 <body>
   <div id="app">
@@ -153,8 +613,1506 @@
 
   </div>
 
-  <script src="data.js"></script>
-  <script src="engine.js"></script>
-  <script src="game.js"></script>
+  <script>
+/* ============================================================================
+ * PERFECT SEASON — player & franchise data
+ * ----------------------------------------------------------------------------
+ * Deep, real team-era rotations (roughly 12-15 men each) so every slot-machine
+ * roll deals a believable roster and picking well is genuinely hard — most of
+ * a real roster is role players, and in Pro Mode you must actually know them.
+ *
+ * Non-commercial fan game; ratings are subjective approximations on a 60-99
+ * scale, meant for fun. Many stars appear as multiple era-specific entries;
+ * a name can only be drafted once.
+ *
+ *   n name  t franchise(era)  d decade  p positions[]  a archetype
+ *   hi height in inches        o off  df def  pm playmaking  rb reb  sh shooting
+ * ==========================================================================*/
+
+const POSITIONS = ["PG", "SG", "SF", "PF", "C"];
+
+const POSITION_NAMES = {
+  PG: "Point Guard",
+  SG: "Shooting Guard",
+  SF: "Small Forward",
+  PF: "Power Forward",
+  C: "Center",
+};
+
+function formatHeight(inches) {
+  return Math.floor(inches / 12) + "'" + (inches % 12) + '"';
+}
+
+// Compact constructor keeps ~600 rows readable: P(name,team,decade,positions,
+// archetype, height-inches, off, def, playmaking, reb, shooting)
+function P(n, t, d, p, a, hi, o, df, pm, rb, sh) {
+  return { n, t, d, p, a, hi, o, df, pm, rb, sh };
+}
+
+const PLAYERS = [
+  // ===================================================================== 1960s
+  // -- Celtics --
+  P("Bill Russell","Celtics","1960s",["C"],"Rim Protector",82,70,99,76,98,50),
+  P("Bob Cousy","Celtics","1960s",["PG"],"Floor General",73,80,72,94,60,70),
+  P("John Havlicek","Celtics","1960s",["SF","SG"],"Two-Way Wing",77,84,84,78,74,76),
+  P("Sam Jones","Celtics","1960s",["SG"],"Scorer",76,84,76,70,66,82),
+  P("Tom Heinsohn","Celtics","1960s",["PF"],"Big-Man Scorer",79,82,72,64,80,70),
+  P("Bill Sharman","Celtics","1960s",["SG"],"Sharpshooter",73,82,72,72,58,82),
+  P("K.C. Jones","Celtics","1960s",["PG"],"Glue Guy",73,64,88,80,58,58),
+  P("Tom Sanders","Celtics","1960s",["PF","SF"],"Glue Guy",78,66,84,62,74,60),
+  P("Bailey Howell","Celtics","1960s",["PF"],"Big-Man Scorer",79,82,76,62,80,66),
+  P("Frank Ramsey","Celtics","1960s",["SG","SF"],"Sixth Man",75,80,72,70,64,76),
+  P("Don Nelson","Celtics","1960s",["SF","PF"],"Role Player",78,76,70,66,72,70),
+  P("Larry Siegfried","Celtics","1960s",["PG","SG"],"Role Player",75,74,72,76,56,74),
+  P("Satch Sanders","Celtics","1960s",["PF"],"Role Player",78,64,82,60,72,58),
+  // -- Lakers --
+  P("Jerry West","Lakers","1960s",["PG","SG"],"Scorer",74,91,84,82,68,84),
+  P("Elgin Baylor","Lakers","1960s",["SF"],"Slasher",77,90,74,74,84,72),
+  P("Gail Goodrich","Lakers","1960s",["PG","SG"],"Scorer",73,84,68,78,58,78),
+  P("Rudy LaRusso","Lakers","1960s",["PF"],"Glue Guy",79,76,80,64,80,66),
+  P("Dick Barnett","Lakers","1960s",["SG"],"Scorer",76,82,76,70,60,76),
+  P("Leroy Ellis","Lakers","1960s",["C","PF"],"Glue Guy",83,70,80,60,82,58),
+  P("Walt Hazzard","Lakers","1960s",["PG"],"Floor General",74,76,74,84,58,68),
+  P("Tom Hawkins","Lakers","1960s",["SF"],"Role Player",77,68,76,60,74,58),
+  P("Jim Krebs","Lakers","1960s",["C"],"Role Player",84,68,74,56,78,62),
+  P("Archie Clark","Lakers","1960s",["PG","SG"],"Scorer",74,80,74,80,58,74),
+  P("Mel Counts","Lakers","1960s",["C"],"Stretch Big",84,72,76,58,80,68),
+  P("Darrall Imhoff","Lakers","1960s",["C"],"Glue Guy",84,64,80,58,80,52),
+  // -- Warriors --
+  P("Wilt Chamberlain","Warriors","1960s",["C"],"Rim Protector",85,92,95,74,99,52),
+  P("Nate Thurmond","Warriors","1960s",["C","PF"],"Rim Protector",83,74,94,66,94,50),
+  P("Paul Arizin","Warriors","1960s",["SF","SG"],"Scorer",76,86,70,68,72,78),
+  P("Guy Rodgers","Warriors","1960s",["PG"],"Floor General",72,72,72,92,58,64),
+  P("Al Attles","Warriors","1960s",["PG","SG"],"Glue Guy",72,70,84,76,60,62),
+  P("Tom Meschery","Warriors","1960s",["PF"],"Glue Guy",78,76,78,62,80,64),
+  P("Jeff Mullins","Warriors","1960s",["SG"],"Scorer",76,82,74,74,62,78),
+  P("Paul Neumann","Warriors","1960s",["PG","SG"],"Role Player",73,76,72,78,56,76),
+  P("Wayne Hightower","Warriors","1960s",["PF"],"Role Player",81,72,74,58,76,64),
+  P("Tom Gola","Warriors","1960s",["SF","PG"],"Glue Guy",78,76,82,82,76,66),
+  P("Clyde Lee","Warriors","1960s",["C","PF"],"Glue Guy",82,66,80,56,82,54),
+  P("Rick Barry","Warriors","1960s",["SF"],"Scorer",79,86,74,78,72,82),
+  // -- 76ers --
+  P("Hal Greer","76ers","1960s",["SG"],"Scorer",74,84,78,74,66,80),
+  P("Billy Cunningham","76ers","1960s",["SF","PF"],"Slasher",78,86,76,78,82,68),
+  P("Chet Walker","76ers","1960s",["SF"],"Scorer",78,84,72,68,72,74),
+  P("Wali Jones","76ers","1960s",["PG"],"Role Player",74,76,74,80,56,72),
+  P("Luke Jackson","76ers","1960s",["PF","C"],"Glue Guy",81,70,82,66,86,56),
+  P("Larry Costello","76ers","1960s",["PG"],"Floor General",73,78,74,86,56,76),
+  P("Dave Gambee","76ers","1960s",["PF"],"Role Player",79,76,70,60,76,68),
+  P("Johnny Kerr","76ers","1960s",["C"],"Glue Guy",81,76,76,72,82,62),
+  P("Matt Guokas","76ers","1960s",["SG","SF"],"Role Player",77,72,76,76,60,70),
+  P("Wilt Chamberlain","76ers","1960s",["C"],"Big-Man Scorer",85,90,92,76,98,52),
+  // -- Royals --
+  P("Oscar Robertson","Royals","1960s",["PG"],"Floor General",77,90,80,96,80,78),
+  P("Jerry Lucas","Royals","1960s",["PF","C"],"Glue Guy",80,80,80,74,92,66),
+  P("Jack Twyman","Royals","1960s",["SF"],"Scorer",78,84,70,66,74,76),
+  P("Wayne Embry","Royals","1960s",["C"],"Glue Guy",80,74,80,60,84,54),
+  P("Adrian Smith","Royals","1960s",["PG","SG"],"Role Player",73,78,72,76,56,76),
+  P("Happy Hairston","Royals","1960s",["PF"],"Glue Guy",79,76,78,64,84,60),
+  P("Connie Dierking","Royals","1960s",["C"],"Role Player",81,74,74,58,80,62),
+  P("Arlen Bockhorn","Royals","1960s",["SG"],"Role Player",75,74,74,72,58,72),
+  P("Tom Hawkins","Royals","1960s",["SF"],"Role Player",77,70,76,62,76,58),
+  P("Bob Boozer","Royals","1960s",["PF"],"Big-Man Scorer",80,80,74,62,80,66),
+  // -- Hawks --
+  P("Bob Pettit","Hawks","1960s",["PF","C"],"Big-Man Scorer",81,88,80,66,90,64),
+  P("Lenny Wilkens","Hawks","1960s",["PG"],"Floor General",73,80,78,90,60,70),
+  P("Lou Hudson","Hawks","1960s",["SG","SF"],"Scorer",77,86,70,68,66,80),
+  P("Bill Bridges","Hawks","1960s",["PF"],"Glue Guy",78,70,84,66,88,58),
+  P("Zelmo Beaty","Hawks","1960s",["C"],"Two-Way Big",81,80,82,60,84,60),
+  P("Cliff Hagan","Hawks","1960s",["SF"],"Scorer",76,84,72,68,72,76),
+  P("Richie Guerin","Hawks","1960s",["PG","SG"],"Scorer",76,84,74,82,62,76),
+  P("Paul Silas","Hawks","1960s",["PF"],"Glue Guy",79,66,82,68,86,54),
+  P("Joe Caldwell","Hawks","1960s",["SF","SG"],"Two-Way Wing",77,80,82,70,68,72),
+  P("Gene Tormohlen","Hawks","1960s",["C","PF"],"Role Player",81,66,76,58,78,56),
+
+  // ===================================================================== 1970s
+  // -- Knicks (champs) --
+  P("Walt Frazier","Knicks","1970s",["PG","SG"],"Two-Way Wing",76,84,90,88,68,76),
+  P("Willis Reed","Knicks","1970s",["C"],"Two-Way Big",81,82,88,64,84,62),
+  P("Dave DeBusschere","Knicks","1970s",["PF"],"Glue Guy",78,74,90,70,84,66),
+  P("Earl Monroe","Knicks","1970s",["PG","SG"],"Scorer",75,86,72,80,60,76),
+  P("Bill Bradley","Knicks","1970s",["SF"],"Role Player",77,78,76,78,64,78),
+  P("Dick Barnett","Knicks","1970s",["SG"],"Scorer",76,82,76,70,60,76),
+  P("Jerry Lucas","Knicks","1970s",["C","PF"],"Stretch Big",80,78,78,76,88,74),
+  P("Phil Jackson","Knicks","1970s",["PF"],"Glue Guy",80,68,82,68,76,60),
+  P("Dean Meminger","Knicks","1970s",["PG"],"Glue Guy",72,70,84,78,56,64),
+  P("Henry Bibby","Knicks","1970s",["PG"],"Role Player",73,74,74,78,54,74),
+  P("Cazzie Russell","Knicks","1970s",["SF"],"Scorer",77,82,68,70,66,78),
+  P("Mike Riordan","Knicks","1970s",["SG","SF"],"Role Player",76,76,76,72,62,72),
+  // -- Bucks --
+  P("Kareem Abdul-Jabbar","Bucks","1970s",["C"],"Big-Man Scorer",86,95,90,74,92,68),
+  P("Oscar Robertson","Bucks","1970s",["PG"],"Floor General",77,84,78,92,72,76),
+  P("Bob Dandridge","Bucks","1970s",["SF"],"Two-Way Wing",78,84,82,70,72,76),
+  P("Jon McGlocklin","Bucks","1970s",["SG"],"Sharpshooter",77,78,68,72,56,84),
+  P("Lucius Allen","Bucks","1970s",["PG"],"Slasher",74,80,74,80,58,74),
+  P("Bob Boozer","Bucks","1970s",["PF"],"Big-Man Scorer",80,80,74,62,80,66),
+  P("Greg Smith","Bucks","1970s",["PF"],"Glue Guy",79,70,80,64,80,58),
+  P("Curtis Perry","Bucks","1970s",["PF"],"Glue Guy",80,68,80,62,82,58),
+  P("Dick Cunningham","Bucks","1970s",["C"],"Role Player",82,62,78,56,80,52),
+  P("Mickey Davis","Bucks","1970s",["SF","SG"],"Sixth Man",79,78,70,68,68,76),
+  // -- Blazers (1977 champs) --
+  P("Bill Walton","Blazers","1970s",["C"],"Two-Way Big",83,82,92,84,92,56),
+  P("Maurice Lucas","Blazers","1970s",["PF"],"Big-Man Scorer",81,84,84,70,86,64),
+  P("Lionel Hollins","Blazers","1970s",["PG"],"Two-Way Wing",75,80,84,82,58,72),
+  P("Bob Gross","Blazers","1970s",["SF"],"Glue Guy",78,74,82,76,70,70),
+  P("Dave Twardzik","Blazers","1970s",["PG"],"Role Player",73,76,76,80,52,70),
+  P("Lloyd Neal","Blazers","1970s",["PF","C"],"Glue Guy",79,70,80,60,82,58),
+  P("Larry Steele","Blazers","1970s",["SG","SF"],"3&D Wing",77,72,82,72,60,72),
+  P("Johnny Davis","Blazers","1970s",["PG","SG"],"Scorer",74,78,74,78,56,74),
+  P("Corky Calhoun","Blazers","1970s",["SF","PF"],"Role Player",79,68,78,64,72,62),
+  P("Herm Gilliam","Blazers","1970s",["SG"],"Role Player",75,78,72,74,58,76),
+  P("Robin Jones","Blazers","1970s",["C"],"Role Player",81,64,76,56,78,52),
+  P("Wally Walker","Blazers","1970s",["SF"],"Role Player",78,72,70,62,68,68),
+  // -- Celtics --
+  P("John Havlicek","Celtics","1970s",["SF","SG"],"Two-Way Wing",77,86,84,80,74,78),
+  P("Dave Cowens","Celtics","1970s",["C"],"Two-Way Big",81,82,86,78,90,62),
+  P("JoJo White","Celtics","1970s",["PG","SG"],"Two-Way Wing",75,80,80,84,60,76),
+  P("Paul Silas","Celtics","1970s",["PF"],"Glue Guy",79,66,86,70,90,54),
+  P("Charlie Scott","Celtics","1970s",["SG"],"Scorer",77,84,74,78,60,76),
+  P("Don Nelson","Celtics","1970s",["SF","PF"],"Sixth Man",78,78,72,68,74,74),
+  P("Don Chaney","Celtics","1970s",["SG","SF"],"3&D Wing",77,72,86,70,60,68),
+  P("Paul Westphal","Celtics","1970s",["PG","SG"],"Scorer",76,84,72,82,58,78),
+  P("Steve Kuberski","Celtics","1970s",["PF"],"Role Player",80,72,72,60,76,66),
+  P("Dave Bing","Celtics","1970s",["PG"],"Floor General",75,82,72,86,60,76),
+  // -- Warriors (1975 champs) --
+  P("Rick Barry","Warriors","1970s",["SF"],"Scorer",79,89,78,82,74,86),
+  P("Jamaal Wilkes","Warriors","1970s",["SF","PF"],"Two-Way Wing",78,82,80,70,72,76),
+  P("Phil Smith","Warriors","1970s",["SG"],"Scorer",76,82,76,76,58,76),
+  P("Clifford Ray","Warriors","1970s",["C"],"Rim Protector",81,60,86,64,84,48),
+  P("Cazzie Russell","Warriors","1970s",["SF"],"Scorer",77,82,68,70,66,78),
+  P("Jeff Mullins","Warriors","1970s",["SG"],"Scorer",76,80,72,74,60,78),
+  P("Charles Johnson","Warriors","1970s",["SG"],"3&D Wing",73,74,80,72,56,76),
+  P("Butch Beard","Warriors","1970s",["PG"],"Floor General",75,76,76,82,60,72),
+  P("George Johnson","Warriors","1970s",["C"],"Rim Protector",83,58,86,58,82,46),
+  P("Derrek Dickey","Warriors","1970s",["PF"],"Role Player",80,72,70,58,74,66),
+  // -- 76ers --
+  P("Julius Erving","76ers","1970s",["SF"],"Slasher",79,90,82,80,80,72),
+  P("George McGinnis","76ers","1970s",["PF"],"Big-Man Scorer",80,86,76,74,84,62),
+  P("Doug Collins","76ers","1970s",["SG"],"Scorer",78,84,74,74,60,78),
+  P("World B. Free","76ers","1970s",["SG"],"Scorer",74,86,64,72,54,78),
+  P("Darryl Dawkins","76ers","1970s",["C"],"Big-Man Scorer",83,78,80,56,80,58),
+  P("Caldwell Jones","76ers","1970s",["C","PF"],"Rim Protector",83,62,88,60,84,50),
+  P("Steve Mix","76ers","1970s",["SF","PF"],"Glue Guy",79,78,76,66,76,72),
+  P("Henry Bibby","76ers","1970s",["PG"],"Role Player",73,74,74,80,54,74),
+  P("Bobby Jones","76ers","1970s",["PF","SF"],"Glue Guy",81,76,90,72,78,64),
+  P("Lloyd Free","76ers","1970s",["SG"],"Scorer",74,84,64,70,54,78),
+  // -- Bullets (1978 champs) --
+  P("Elvin Hayes","Bullets","1970s",["PF","C"],"Big-Man Scorer",81,86,84,60,92,66),
+  P("Wes Unseld","Bullets","1970s",["C"],"Glue Guy",79,70,88,80,92,56),
+  P("Phil Chenier","Bullets","1970s",["SG"],"Scorer",75,82,78,72,60,76),
+  P("Bob Dandridge","Bullets","1970s",["SF"],"Two-Way Wing",78,84,82,70,72,76),
+  P("Kevin Grevey","Bullets","1970s",["SG","SF"],"Sharpshooter",77,78,68,68,60,82),
+  P("Tom Henderson","Bullets","1970s",["PG"],"Floor General",75,74,76,84,58,68),
+  P("Mitch Kupchak","Bullets","1970s",["PF","C"],"Glue Guy",82,78,76,62,80,64),
+  P("Larry Wright","Bullets","1970s",["PG"],"Role Player",73,76,72,78,54,74),
+  P("Charles Johnson","Bullets","1970s",["SG"],"3&D Wing",73,74,80,70,56,76),
+  P("Greg Ballard","Bullets","1970s",["SF","PF"],"Role Player",79,76,72,64,76,72),
+  // -- Suns --
+  P("Paul Westphal","Suns","1970s",["PG","SG"],"Scorer",76,86,72,82,60,78),
+  P("Alvan Adams","Suns","1970s",["C"],"Floor General",81,82,80,82,80,64),
+  P("Walter Davis","Suns","1970s",["SG","SF"],"Scorer",78,86,72,76,62,82),
+  P("Dick Van Arsdale","Suns","1970s",["SG","SF"],"Glue Guy",77,78,80,72,66,72),
+  P("Gar Heard","Suns","1970s",["PF"],"Glue Guy",79,70,82,62,82,60),
+  P("Curtis Perry","Suns","1970s",["PF"],"Glue Guy",80,68,80,62,82,58),
+  P("Ricky Sobers","Suns","1970s",["PG"],"Two-Way Wing",75,78,78,80,58,74),
+  P("Don Buse","Suns","1970s",["PG"],"3&D Wing",76,70,82,84,56,72),
+  P("Mike Bratz","Suns","1970s",["PG","SG"],"Role Player",74,72,72,76,54,76),
+  P("Truck Robinson","Suns","1970s",["PF"],"Big-Man Scorer",79,82,76,60,88,58),
+
+  // ===================================================================== 1980s
+  // -- Lakers (Showtime) --
+  P("Magic Johnson","Lakers","1980s",["PG","SF"],"Floor General",81,88,80,99,82,78),
+  P("Kareem Abdul-Jabbar","Lakers","1980s",["C"],"Big-Man Scorer",86,90,86,72,84,68),
+  P("James Worthy","Lakers","1980s",["SF"],"Slasher",81,86,78,74,70,74),
+  P("Byron Scott","Lakers","1980s",["SG"],"Sharpshooter",76,82,76,70,60,86),
+  P("Michael Cooper","Lakers","1980s",["SG","SF"],"3&D Wing",77,70,92,78,64,80),
+  P("Norm Nixon","Lakers","1980s",["PG"],"Floor General",74,82,74,88,58,76),
+  P("Jamaal Wilkes","Lakers","1980s",["SF"],"Two-Way Wing",78,82,78,68,70,76),
+  P("Bob McAdoo","Lakers","1980s",["C","PF"],"Big-Man Scorer",81,86,72,64,80,76),
+  P("A.C. Green","Lakers","1980s",["PF"],"Glue Guy",81,72,82,62,84,64),
+  P("Kurt Rambis","Lakers","1980s",["PF"],"Glue Guy",80,64,82,60,82,52),
+  P("Mychal Thompson","Lakers","1980s",["C","PF"],"Two-Way Big",82,80,80,64,80,60),
+  P("Mitch Kupchak","Lakers","1980s",["PF","C"],"Sixth Man",82,78,74,60,80,64),
+  P("Mike McGee","Lakers","1980s",["SG"],"Scorer",77,78,70,68,58,78),
+  P("Larry Spriggs","Lakers","1980s",["SF"],"Role Player",78,76,72,64,72,68),
+  // -- Celtics --
+  P("Larry Bird","Celtics","1980s",["SF","PF"],"Two-Way Wing",81,93,82,88,84,92),
+  P("Kevin McHale","Celtics","1980s",["PF","C"],"Big-Man Scorer",82,87,84,64,82,66),
+  P("Robert Parish","Celtics","1980s",["C"],"Two-Way Big",84,80,84,62,88,62),
+  P("Dennis Johnson","Celtics","1980s",["PG","SG"],"Two-Way Wing",76,78,88,80,62,72),
+  P("Danny Ainge","Celtics","1980s",["SG","PG"],"Sharpshooter",77,78,78,78,58,84),
+  P("Cedric Maxwell","Celtics","1980s",["PF"],"Glue Guy",80,78,78,72,78,62),
+  P("Bill Walton","Celtics","1980s",["C"],"Sixth Man",83,76,84,80,82,56),
+  P("Scott Wedman","Celtics","1980s",["SF"],"Sharpshooter",79,76,74,66,68,84),
+  P("Tiny Archibald","Celtics","1980s",["PG"],"Floor General",73,80,68,90,56,74),
+  P("Jerry Sichting","Celtics","1980s",["PG"],"Sharpshooter",73,72,70,78,52,82),
+  P("Gerald Henderson","Celtics","1980s",["PG"],"Glue Guy",74,74,82,80,56,70),
+  P("Greg Kite","Celtics","1980s",["C"],"Role Player",83,58,76,52,76,48),
+  // -- 76ers (1983 champs) --
+  P("Julius Erving","76ers","1980s",["SF"],"Slasher",79,88,80,78,76,72),
+  P("Moses Malone","76ers","1980s",["C","PF"],"Big-Man Scorer",82,86,84,60,95,56),
+  P("Maurice Cheeks","76ers","1980s",["PG"],"Floor General",73,78,88,88,58,74),
+  P("Andrew Toney","76ers","1980s",["SG"],"Scorer",75,86,74,76,56,80),
+  P("Bobby Jones","76ers","1980s",["PF","SF"],"Glue Guy",81,74,90,70,76,62),
+  P("Charles Barkley","76ers","1980s",["PF"],"Big-Man Scorer",78,88,80,80,90,70),
+  P("Clint Richardson","76ers","1980s",["SG"],"3&D Wing",76,72,80,72,58,72),
+  P("Clemon Johnson","76ers","1980s",["C","PF"],"Glue Guy",82,66,80,58,80,56),
+  P("Marc Iavaroni","76ers","1980s",["PF"],"Role Player",81,68,78,60,76,62),
+  P("Sedale Threatt","76ers","1980s",["PG","SG"],"Sixth Man",74,80,74,80,56,78),
+  P("Steve Mix","76ers","1980s",["SF"],"Role Player",79,76,74,66,74,72),
+  // -- Pistons (Bad Boys) --
+  P("Isiah Thomas","Pistons","1980s",["PG"],"Floor General",73,86,78,92,62,76),
+  P("Joe Dumars","Pistons","1980s",["SG"],"Two-Way Wing",75,82,86,78,56,80),
+  P("Bill Laimbeer","Pistons","1980s",["C"],"Stretch Big",83,74,84,60,86,76),
+  P("Dennis Rodman","Pistons","1980s",["PF","SF"],"Glue Guy",79,58,92,62,90,44),
+  P("Vinnie Johnson","Pistons","1980s",["SG"],"Sixth Man",74,84,72,76,62,76),
+  P("Adrian Dantley","Pistons","1980s",["SF"],"Scorer",77,88,68,72,70,74),
+  P("Mark Aguirre","Pistons","1980s",["SF"],"Scorer",78,86,66,74,68,76),
+  P("Rick Mahorn","Pistons","1980s",["PF","C"],"Glue Guy",82,72,86,60,82,58),
+  P("John Salley","Pistons","1980s",["PF","C"],"Rim Protector",83,70,84,62,76,56),
+  P("James Edwards","Pistons","1980s",["C"],"Big-Man Scorer",84,80,76,56,76,60),
+  P("Kelly Tripucka","Pistons","1980s",["SF","SG"],"Scorer",78,84,70,72,66,78),
+  P("John Long","Pistons","1980s",["SG"],"Scorer",77,82,72,72,58,80),
+  // -- Bucks --
+  P("Sidney Moncrief","Bucks","1980s",["SG"],"Two-Way Wing",76,82,90,78,70,76),
+  P("Terry Cummings","Bucks","1980s",["PF"],"Big-Man Scorer",81,84,76,64,82,64),
+  P("Marques Johnson","Bucks","1980s",["SF"],"Slasher",79,86,76,78,74,70),
+  P("Paul Pressey","Bucks","1980s",["SF","PG"],"Glue Guy",77,74,86,84,66,64),
+  P("Bob Lanier","Bucks","1980s",["C"],"Big-Man Scorer",83,84,82,68,84,62),
+  P("Junior Bridgeman","Bucks","1980s",["SF","SG"],"Sixth Man",77,80,72,70,66,76),
+  P("Craig Hodges","Bucks","1980s",["SG"],"Sharpshooter",74,76,66,72,52,88),
+  P("Ricky Pierce","Bucks","1980s",["SG"],"Sixth Man",76,84,70,72,58,80),
+  P("Jack Sikma","Bucks","1980s",["C"],"Stretch Big",83,80,80,68,84,76),
+  P("Paul Mokeski","Bucks","1980s",["C"],"Role Player",83,64,76,54,78,56),
+  // -- Hawks --
+  P("Dominique Wilkins","Hawks","1980s",["SF","SG"],"Slasher",80,90,70,70,74,78),
+  P("Doc Rivers","Hawks","1980s",["PG"],"Two-Way Wing",76,78,84,84,60,72),
+  P("Kevin Willis","Hawks","1980s",["PF","C"],"Big-Man Scorer",84,78,78,56,86,60),
+  P("Spud Webb","Hawks","1980s",["PG"],"Role Player",67,76,70,84,50,72),
+  P("Tree Rollins","Hawks","1980s",["C"],"Rim Protector",85,56,90,54,84,46),
+  P("Randy Wittman","Hawks","1980s",["SG"],"Sharpshooter",78,76,68,68,56,82),
+  P("Cliff Levingston","Hawks","1980s",["PF"],"Glue Guy",80,70,82,62,80,58),
+  P("Antoine Carr","Hawks","1980s",["PF"],"Sixth Man",81,80,76,58,76,68),
+  P("John Battle","Hawks","1980s",["SG"],"Scorer",74,80,68,74,56,76),
+  P("Glenn Rivers","Hawks","1980s",["PG"],"Role Player",76,76,80,82,58,72),
+  // -- Mavericks --
+  P("Mark Aguirre","Mavericks","1980s",["SF"],"Scorer",78,86,66,74,68,76),
+  P("Rolando Blackman","Mavericks","1980s",["SG"],"Scorer",78,84,78,72,62,80),
+  P("Derek Harper","Mavericks","1980s",["PG"],"Two-Way Wing",76,78,84,84,58,76),
+  P("Sam Perkins","Mavericks","1980s",["PF","C"],"Stretch Big",81,78,78,64,80,78),
+  P("James Donaldson","Mavericks","1980s",["C"],"Rim Protector",87,64,86,56,84,50),
+  P("Brad Davis","Mavericks","1980s",["PG"],"Floor General",75,76,72,84,54,78),
+  P("Roy Tarpley","Mavericks","1980s",["PF","C"],"Glue Guy",83,80,80,60,88,62),
+  P("Detlef Schrempf","Mavericks","1980s",["SF","PF"],"Two-Way Wing",82,80,74,78,72,78),
+  P("Jay Vincent","Mavericks","1980s",["PF","SF"],"Big-Man Scorer",79,80,70,62,76,72),
+  P("Dale Ellis","Mavericks","1980s",["SF","SG"],"Sharpshooter",79,82,68,68,62,86),
+
+  // ===================================================================== 1990s
+  // -- Bulls (dynasty) --
+  P("Michael Jordan","Bulls","1990s",["SG","SF"],"Scorer",78,99,92,84,76,84),
+  P("Scottie Pippen","Bulls","1990s",["SF","PF"],"Two-Way Wing",80,82,94,86,80,74),
+  P("Dennis Rodman","Bulls","1990s",["PF","C"],"Glue Guy",79,52,95,64,99,40),
+  P("Toni Kukoc","Bulls","1990s",["SF","PF"],"Sixth Man",83,82,72,84,70,80),
+  P("Horace Grant","Bulls","1990s",["PF"],"Glue Guy",82,74,84,68,84,66),
+  P("B.J. Armstrong","Bulls","1990s",["PG"],"Sharpshooter",74,76,70,80,52,84),
+  P("Steve Kerr","Bulls","1990s",["PG","SG"],"Sharpshooter",75,72,66,78,50,92),
+  P("Ron Harper","Bulls","1990s",["SG","PG"],"3&D Wing",78,74,84,78,64,70),
+  P("John Paxson","Bulls","1990s",["PG"],"Sharpshooter",74,72,68,80,50,86),
+  P("Bill Cartwright","Bulls","1990s",["C"],"Glue Guy",84,74,80,58,78,58),
+  P("Luc Longley","Bulls","1990s",["C"],"Glue Guy",86,70,80,60,76,56),
+  P("Will Perdue","Bulls","1990s",["C"],"Role Player",84,62,78,56,78,50),
+  P("Scott Williams","Bulls","1990s",["PF","C"],"Role Player",82,66,78,56,78,56),
+  // -- Rockets (champs) --
+  P("Hakeem Olajuwon","Rockets","1990s",["C"],"Two-Way Big",84,90,96,72,92,58),
+  P("Clyde Drexler","Rockets","1990s",["SG","SF"],"Slasher",79,84,80,80,72,76),
+  P("Otis Thorpe","Rockets","1990s",["PF"],"Glue Guy",82,78,78,64,84,58),
+  P("Kenny Smith","Rockets","1990s",["PG"],"Sharpshooter",75,78,70,82,52,84),
+  P("Robert Horry","Rockets","1990s",["PF","SF"],"3&D Wing",82,72,82,72,74,78),
+  P("Sam Cassell","Rockets","1990s",["PG"],"Scorer",75,82,70,84,58,78),
+  P("Vernon Maxwell","Rockets","1990s",["SG"],"Scorer",76,80,74,76,56,78),
+  P("Mario Elie","Rockets","1990s",["SF","SG"],"3&D Wing",77,76,82,74,62,80),
+  P("Scott Brooks","Rockets","1990s",["PG"],"Sharpshooter",71,74,68,80,50,84),
+  P("Matt Bullard","Rockets","1990s",["PF"],"Sharpshooter",82,72,64,62,68,82),
+  P("Charles Barkley","Rockets","1990s",["PF"],"Big-Man Scorer",78,88,80,80,90,70),
+  // -- Jazz --
+  P("Karl Malone","Jazz","1990s",["PF"],"Big-Man Scorer",81,91,84,74,90,70),
+  P("John Stockton","Jazz","1990s",["PG"],"Floor General",73,78,82,98,58,82),
+  P("Jeff Hornacek","Jazz","1990s",["SG"],"Sharpshooter",76,80,76,80,58,90),
+  P("Bryon Russell","Jazz","1990s",["SF"],"3&D Wing",79,74,82,66,66,78),
+  P("Antoine Carr","Jazz","1990s",["PF"],"Sixth Man",81,80,74,58,74,70),
+  P("Jeff Malone","Jazz","1990s",["SG"],"Scorer",76,84,70,68,56,84),
+  P("Greg Ostertag","Jazz","1990s",["C"],"Rim Protector",87,60,84,52,80,46),
+  P("Felton Spencer","Jazz","1990s",["C"],"Glue Guy",84,64,80,54,80,50),
+  P("Howard Eisley","Jazz","1990s",["PG"],"Role Player",74,74,72,80,54,76),
+  P("David Benoit","Jazz","1990s",["SF","PF"],"Role Player",80,72,72,62,74,72),
+  // -- Knicks --
+  P("Patrick Ewing","Knicks","1990s",["C"],"Two-Way Big",84,86,90,64,88,68),
+  P("John Starks","Knicks","1990s",["SG"],"Scorer",77,80,80,74,56,82),
+  P("Charles Oakley","Knicks","1990s",["PF"],"Glue Guy",81,70,86,70,88,60),
+  P("Allan Houston","Knicks","1990s",["SG"],"Sharpshooter",78,84,70,70,56,88),
+  P("Larry Johnson","Knicks","1990s",["PF","SF"],"Big-Man Scorer",78,82,78,72,80,72),
+  P("Latrell Sprewell","Knicks","1990s",["SG","SF"],"Slasher",77,84,78,76,62,76),
+  P("Anthony Mason","Knicks","1990s",["PF"],"Glue Guy",79,76,84,80,82,60),
+  P("Derek Harper","Knicks","1990s",["PG"],"Two-Way Wing",76,76,82,84,58,76),
+  P("Charlie Ward","Knicks","1990s",["PG"],"3&D Wing",74,72,80,82,56,74),
+  P("Chris Childs","Knicks","1990s",["PG"],"Role Player",75,74,76,82,56,76),
+  P("John Wallace","Knicks","1990s",["PF"],"Role Player",80,74,72,60,74,68),
+  P("Buck Williams","Knicks","1990s",["PF"],"Glue Guy",80,68,84,58,84,56),
+  // -- Suns --
+  P("Charles Barkley","Suns","1990s",["PF"],"Big-Man Scorer",78,90,80,80,92,72),
+  P("Kevin Johnson","Suns","1990s",["PG"],"Slasher",73,86,70,90,58,76),
+  P("Dan Majerle","Suns","1990s",["SG","SF"],"3&D Wing",78,78,84,74,66,84),
+  P("Tom Chambers","Suns","1990s",["PF"],"Big-Man Scorer",82,82,64,62,72,78),
+  P("Cedric Ceballos","Suns","1990s",["SF"],"Scorer",78,82,66,66,72,74),
+  P("Danny Ainge","Suns","1990s",["SG","PG"],"Sharpshooter",77,78,76,78,56,84),
+  P("A.C. Green","Suns","1990s",["PF"],"Glue Guy",81,72,80,62,82,64),
+  P("Wesley Person","Suns","1990s",["SG","SF"],"Sharpshooter",78,76,68,66,58,86),
+  P("Mark West","Suns","1990s",["C"],"Rim Protector",82,58,84,52,80,44),
+  P("Negele Knight","Suns","1990s",["PG"],"Role Player",73,76,70,80,54,74),
+  // -- SuperSonics --
+  P("Gary Payton","Sonics","1990s",["PG"],"Two-Way Wing",76,82,94,88,66,74),
+  P("Shawn Kemp","Sonics","1990s",["PF","C"],"Big-Man Scorer",82,84,82,62,84,58),
+  P("Detlef Schrempf","Sonics","1990s",["SF","PF"],"Two-Way Wing",82,82,76,80,74,80),
+  P("Hersey Hawkins","Sonics","1990s",["SG"],"3&D Wing",75,78,82,72,58,84),
+  P("Nate McMillan","Sonics","1990s",["PG","SF"],"Glue Guy",77,68,88,82,64,68),
+  P("Sam Perkins","Sonics","1990s",["PF","C"],"Stretch Big",81,76,78,62,80,82),
+  P("Vincent Askew","Sonics","1990s",["SF","SG"],"Glue Guy",78,74,80,72,64,68),
+  P("Ervin Johnson","Sonics","1990s",["C"],"Rim Protector",83,60,84,54,82,46),
+  P("Kendall Gill","Sonics","1990s",["SG","SF"],"Two-Way Wing",77,80,78,74,64,74),
+  P("Eddie Johnson","Sonics","1990s",["SF","SG"],"Sixth Man",79,80,68,66,68,84),
+  // -- Pacers --
+  P("Reggie Miller","Pacers","1990s",["SG"],"Sharpshooter",79,84,74,70,62,96),
+  P("Rik Smits","Pacers","1990s",["C"],"Big-Man Scorer",88,82,78,60,78,70),
+  P("Mark Jackson","Pacers","1990s",["PG"],"Floor General",75,74,74,90,66,70),
+  P("Dale Davis","Pacers","1990s",["PF","C"],"Glue Guy",83,66,84,56,84,50),
+  P("Antonio Davis","Pacers","1990s",["PF","C"],"Glue Guy",81,68,84,58,82,54),
+  P("Chris Mullin","Pacers","1990s",["SF","SG"],"Sharpshooter",79,82,70,78,62,90),
+  P("Derrick McKey","Pacers","1990s",["SF"],"3&D Wing",81,76,84,72,68,74),
+  P("Jalen Rose","Pacers","1990s",["SF","SG"],"Scorer",80,82,72,80,64,76),
+  P("Travis Best","Pacers","1990s",["PG"],"Role Player",71,76,70,80,52,76),
+  P("Sam Perkins","Pacers","1990s",["PF","C"],"Stretch Big",81,74,76,60,78,80),
+  // -- Spurs --
+  P("David Robinson","Spurs","1990s",["C"],"Rim Protector",85,88,94,70,90,58),
+  P("Sean Elliott","Spurs","1990s",["SF"],"3&D Wing",80,80,76,74,68,82),
+  P("Avery Johnson","Spurs","1990s",["PG"],"Floor General",71,72,80,88,52,66),
+  P("Vinny Del Negro","Spurs","1990s",["SG","PG"],"Role Player",76,76,72,76,56,78),
+  P("Tim Duncan","Spurs","1990s",["PF","C"],"Two-Way Big",83,84,92,72,90,60),
+  P("Mario Elie","Spurs","1990s",["SF","SG"],"3&D Wing",77,74,82,74,62,80),
+  P("Jaren Jackson","Spurs","1990s",["SG"],"3&D Wing",78,74,74,68,58,80),
+  P("Will Perdue","Spurs","1990s",["C"],"Role Player",84,62,78,56,78,50),
+  P("Chuck Person","Spurs","1990s",["SF"],"Sharpshooter",80,78,64,64,68,86),
+  P("Malik Rose","Spurs","1990s",["PF"],"Glue Guy",79,68,80,58,80,56),
+
+  // ===================================================================== 2000s
+  // -- Lakers --
+  P("Kobe Bryant","Lakers","2000s",["SG","SF"],"Scorer",78,96,86,78,70,86),
+  P("Shaquille O'Neal","Lakers","2000s",["C"],"Big-Man Scorer",85,94,88,66,86,52),
+  P("Pau Gasol","Lakers","2000s",["PF","C"],"Two-Way Big",84,86,82,78,86,66),
+  P("Derek Fisher","Lakers","2000s",["PG"],"3&D Wing",73,72,78,76,54,80),
+  P("Lamar Odom","Lakers","2000s",["PF","SF"],"Glue Guy",82,80,80,82,80,70),
+  P("Metta World Peace","Lakers","2000s",["SF"],"3&D Wing",79,76,90,72,68,74),
+  P("Robert Horry","Lakers","2000s",["PF"],"3&D Wing",82,70,82,70,72,78),
+  P("Rick Fox","Lakers","2000s",["SF"],"3&D Wing",79,74,80,76,64,76),
+  P("Andrew Bynum","Lakers","2000s",["C"],"Big-Man Scorer",84,82,80,56,84,58),
+  P("Trevor Ariza","Lakers","2000s",["SF"],"3&D Wing",80,72,82,68,66,76),
+  P("Brian Shaw","Lakers","2000s",["PG"],"Role Player",78,72,76,80,62,74),
+  P("Devean George","Lakers","2000s",["SF"],"Role Player",80,72,76,64,66,74),
+  // -- Spurs --
+  P("Tim Duncan","Spurs","2000s",["PF","C"],"Two-Way Big",83,88,95,76,92,64),
+  P("Tony Parker","Spurs","2000s",["PG"],"Slasher",74,83,74,84,58,72),
+  P("Manu Ginobili","Spurs","2000s",["SG"],"Two-Way Wing",78,82,80,82,64,80),
+  P("Bruce Bowen","Spurs","2000s",["SF"],"3&D Wing",79,62,92,64,60,80),
+  P("David Robinson","Spurs","2000s",["C"],"Rim Protector",85,80,90,66,84,56),
+  P("Robert Horry","Spurs","2000s",["PF"],"3&D Wing",82,70,82,70,72,78),
+  P("Stephen Jackson","Spurs","2000s",["SF","SG"],"Scorer",80,80,76,76,66,78),
+  P("Brent Barry","Spurs","2000s",["SG","SF"],"Sharpshooter",79,76,72,76,60,86),
+  P("Michael Finley","Spurs","2000s",["SG","SF"],"Scorer",79,80,74,72,64,80),
+  P("Malik Rose","Spurs","2000s",["PF"],"Glue Guy",79,68,80,58,80,56),
+  P("Nazr Mohammed","Spurs","2000s",["C"],"Glue Guy",82,72,78,56,80,54),
+  // -- Pistons --
+  P("Chauncey Billups","Pistons","2000s",["PG"],"Floor General",75,82,80,86,60,86),
+  P("Richard Hamilton","Pistons","2000s",["SG"],"Scorer",79,84,78,74,60,84),
+  P("Ben Wallace","Pistons","2000s",["C","PF"],"Rim Protector",81,52,96,58,94,38),
+  P("Rasheed Wallace","Pistons","2000s",["PF","C"],"Stretch Big",83,80,88,70,80,78),
+  P("Tayshaun Prince","Pistons","2000s",["SF"],"3&D Wing",81,76,86,72,66,76),
+  P("Antonio McDyess","Pistons","2000s",["PF"],"Big-Man Scorer",81,78,76,58,82,66),
+  P("Lindsey Hunter","Pistons","2000s",["PG"],"3&D Wing",74,72,82,78,54,76),
+  P("Mehmet Okur","Pistons","2000s",["C"],"Stretch Big",83,80,72,60,80,80),
+  P("Corliss Williamson","Pistons","2000s",["PF","SF"],"Sixth Man",79,80,72,62,74,68),
+  P("Chucky Atkins","Pistons","2000s",["PG"],"Role Player",73,74,68,78,52,78),
+  // -- Celtics --
+  P("Paul Pierce","Celtics","2000s",["SF"],"Scorer",79,88,78,78,68,82),
+  P("Kevin Garnett","Celtics","2000s",["PF","C"],"Two-Way Big",83,86,94,80,88,70),
+  P("Ray Allen","Celtics","2000s",["SG"],"Sharpshooter",77,84,76,72,64,94),
+  P("Rajon Rondo","Celtics","2000s",["PG"],"Floor General",73,74,86,92,66,58),
+  P("Kendrick Perkins","Celtics","2000s",["C"],"Rim Protector",82,60,86,56,78,42),
+  P("James Posey","Celtics","2000s",["SF"],"3&D Wing",80,72,84,70,68,80),
+  P("Eddie House","Celtics","2000s",["SG"],"Sharpshooter",73,76,64,72,50,84),
+  P("Leon Powe","Celtics","2000s",["PF"],"Glue Guy",80,72,74,58,78,58),
+  P("Glen Davis","Celtics","2000s",["PF","C"],"Glue Guy",81,74,76,58,76,64),
+  P("Tony Allen","Celtics","2000s",["SG","SF"],"3&D Wing",76,72,90,68,62,64),
+  // -- Suns --
+  P("Steve Nash","Suns","2000s",["PG"],"Floor General",75,84,64,97,56,90),
+  P("Amar'e Stoudemire","Suns","2000s",["PF","C"],"Big-Man Scorer",82,86,72,60,80,72),
+  P("Shawn Marion","Suns","2000s",["SF","PF"],"Glue Guy",79,80,86,70,84,74),
+  P("Joe Johnson","Suns","2000s",["SG","SF"],"Scorer",79,84,74,78,66,82),
+  P("Raja Bell","Suns","2000s",["SG"],"3&D Wing",77,72,84,66,58,82),
+  P("Boris Diaw","Suns","2000s",["PF","C"],"Floor General",80,76,72,84,74,72),
+  P("Leandro Barbosa","Suns","2000s",["SG","PG"],"Sixth Man",75,82,68,76,54,80),
+  P("Quentin Richardson","Suns","2000s",["SF","SG"],"Sharpshooter",78,76,72,68,72,82),
+  P("Grant Hill","Suns","2000s",["SF"],"Two-Way Wing",80,82,80,80,70,76),
+  P("Kurt Thomas","Suns","2000s",["C","PF"],"Glue Guy",81,72,80,58,80,68),
+  // -- Mavericks --
+  P("Dirk Nowitzki","Mavericks","2000s",["PF","C"],"Stretch Big",84,92,74,72,82,90),
+  P("Steve Nash","Mavericks","2000s",["PG"],"Floor General",75,82,64,94,56,88),
+  P("Michael Finley","Mavericks","2000s",["SG","SF"],"Scorer",79,84,74,74,66,80),
+  P("Jason Terry","Mavericks","2000s",["SG","PG"],"Sixth Man",74,82,70,80,54,84),
+  P("Josh Howard","Mavericks","2000s",["SF"],"Two-Way Wing",79,80,80,70,72,76),
+  P("Jerry Stackhouse","Mavericks","2000s",["SG"],"Scorer",78,82,72,76,60,78),
+  P("Devin Harris","Mavericks","2000s",["PG"],"Slasher",75,80,72,84,56,74),
+  P("Erick Dampier","Mavericks","2000s",["C"],"Rim Protector",83,64,84,54,84,46),
+  P("Marquis Daniels","Mavericks","2000s",["SF","SG"],"Glue Guy",78,76,74,72,64,70),
+  P("Shawn Bradley","Mavericks","2000s",["C"],"Rim Protector",91,60,86,52,80,48),
+  // -- Cavaliers --
+  P("LeBron James","Cavaliers","2000s",["SF","PF"],"Two-Way Wing",81,92,84,92,82,74),
+  P("Zydrunas Ilgauskas","Cavaliers","2000s",["C"],"Big-Man Scorer",87,78,80,56,82,64),
+  P("Mo Williams","Cavaliers","2000s",["PG"],"Scorer",73,80,66,80,54,82),
+  P("Anderson Varejao","Cavaliers","2000s",["C","PF"],"Glue Guy",83,64,82,62,82,50),
+  P("Larry Hughes","Cavaliers","2000s",["SG"],"Slasher",77,80,78,76,60,72),
+  P("Drew Gooden","Cavaliers","2000s",["PF","C"],"Glue Guy",82,78,74,58,82,64),
+  P("Daniel Gibson","Cavaliers","2000s",["PG","SG"],"Sharpshooter",74,74,66,72,52,84),
+  P("Delonte West","Cavaliers","2000s",["PG","SG"],"3&D Wing",75,76,80,78,56,80),
+  P("Ben Wallace","Cavaliers","2000s",["C"],"Rim Protector",81,52,90,56,88,38),
+  P("Sasha Pavlovic","Cavaliers","2000s",["SG","SF"],"Role Player",79,72,74,66,60,74),
+  // -- Heat --
+  P("Dwyane Wade","Heat","2000s",["SG","PG"],"Slasher",76,91,84,84,70,74),
+  P("Shaquille O'Neal","Heat","2000s",["C"],"Big-Man Scorer",85,90,86,64,84,52),
+  P("Udonis Haslem","Heat","2000s",["PF"],"Glue Guy",80,70,80,62,80,66),
+  P("Jason Williams","Heat","2000s",["PG"],"Floor General",73,74,66,86,52,76),
+  P("Antoine Walker","Heat","2000s",["PF","SF"],"Stretch Big",80,78,70,76,78,70),
+  P("Eddie Jones","Heat","2000s",["SG","SF"],"3&D Wing",78,80,84,74,62,80),
+  P("James Posey","Heat","2000s",["SF"],"3&D Wing",80,72,84,70,68,80),
+  P("Gary Payton","Heat","2000s",["PG"],"Two-Way Wing",76,74,84,84,62,72),
+  P("Alonzo Mourning","Heat","2000s",["C"],"Rim Protector",82,72,88,56,80,52),
+  P("Damon Jones","Heat","2000s",["PG","SG"],"Sharpshooter",74,72,64,76,50,84),
+  // -- Nuggets --
+  P("Carmelo Anthony","Nuggets","2000s",["SF","PF"],"Scorer",79,90,70,72,72,82),
+  P("Allen Iverson","Nuggets","2000s",["PG","SG"],"Scorer",72,88,70,84,56,78),
+  P("Marcus Camby","Nuggets","2000s",["C"],"Rim Protector",83,64,90,66,88,50),
+  P("Kenyon Martin","Nuggets","2000s",["PF"],"Glue Guy",81,72,84,62,80,58),
+  P("Andre Miller","Nuggets","2000s",["PG"],"Floor General",74,78,74,90,64,68),
+  P("Nene","Nuggets","2000s",["C","PF"],"Two-Way Big",83,78,78,62,80,60),
+  P("J.R. Smith","Nuggets","2000s",["SG"],"Scorer",78,80,68,72,58,84),
+  P("Chauncey Billups","Nuggets","2000s",["PG"],"Floor General",75,82,80,86,60,86),
+  P("Linas Kleiza","Nuggets","2000s",["SF","PF"],"Sixth Man",80,78,68,62,74,78),
+  P("Dahntay Jones","Nuggets","2000s",["SG","SF"],"3&D Wing",78,70,84,66,62,68),
+
+  // ===================================================================== 2010s
+  // -- Warriors (dynasty) --
+  P("Stephen Curry","Warriors","2010s",["PG","SG"],"Sharpshooter",74,95,74,90,64,99),
+  P("Kevin Durant","Warriors","2010s",["SF","PF"],"Scorer",83,97,82,80,76,92),
+  P("Klay Thompson","Warriors","2010s",["SG"],"Sharpshooter",78,84,82,64,62,96),
+  P("Draymond Green","Warriors","2010s",["PF","C"],"Glue Guy",78,64,94,86,84,66),
+  P("Andre Iguodala","Warriors","2010s",["SF"],"3&D Wing",78,72,88,80,66,72),
+  P("Andrew Bogut","Warriors","2010s",["C"],"Rim Protector",84,66,88,72,84,46),
+  P("Harrison Barnes","Warriors","2010s",["SF"],"3&D Wing",80,78,78,66,68,78),
+  P("Shaun Livingston","Warriors","2010s",["PG"],"Glue Guy",79,76,78,80,62,68),
+  P("David West","Warriors","2010s",["PF"],"Big-Man Scorer",81,78,80,70,76,72),
+  P("Zaza Pachulia","Warriors","2010s",["C"],"Glue Guy",83,66,78,60,80,52),
+  P("JaVale McGee","Warriors","2010s",["C"],"Rim Protector",84,72,84,54,80,52),
+  P("Kevon Looney","Warriors","2010s",["C","PF"],"Glue Guy",81,64,82,64,82,52),
+  // -- Heat (Big Three) --
+  P("LeBron James","Heat","2010s",["SF","PF"],"Two-Way Wing",81,96,90,94,82,78),
+  P("Dwyane Wade","Heat","2010s",["SG"],"Slasher",76,88,80,82,66,70),
+  P("Chris Bosh","Heat","2010s",["PF","C"],"Stretch Big",83,84,80,66,80,82),
+  P("Ray Allen","Heat","2010s",["SG"],"Sharpshooter",77,78,70,66,56,92),
+  P("Mario Chalmers","Heat","2010s",["PG"],"3&D Wing",74,72,78,76,54,78),
+  P("Shane Battier","Heat","2010s",["SF","PF"],"3&D Wing",80,66,86,70,66,80),
+  P("Udonis Haslem","Heat","2010s",["PF"],"Glue Guy",80,70,78,60,78,64),
+  P("Norris Cole","Heat","2010s",["PG"],"Role Player",73,74,74,78,54,72),
+  P("Mike Miller","Heat","2010s",["SF","SG"],"Sharpshooter",80,74,66,68,66,88),
+  P("Chris Andersen","Heat","2010s",["C"],"Rim Protector",82,62,84,52,80,44),
+  // -- Thunder --
+  P("Kevin Durant","Thunder","2010s",["SF","PF"],"Scorer",83,95,80,78,74,90),
+  P("Russell Westbrook","Thunder","2010s",["PG"],"Slasher",75,86,78,90,80,64),
+  P("James Harden","Thunder","2010s",["SG"],"Sixth Man",77,84,70,82,60,84),
+  P("Serge Ibaka","Thunder","2010s",["PF","C"],"Rim Protector",82,74,90,58,78,72),
+  P("Steven Adams","Thunder","2010s",["C"],"Rim Protector",84,70,84,62,84,44),
+  P("Reggie Jackson","Thunder","2010s",["PG"],"Scorer",75,78,68,80,56,76),
+  P("Kendrick Perkins","Thunder","2010s",["C"],"Rim Protector",82,58,84,56,76,40),
+  P("Thabo Sefolosha","Thunder","2010s",["SG","SF"],"3&D Wing",79,68,88,70,64,74),
+  P("Nick Collison","Thunder","2010s",["PF"],"Glue Guy",82,68,80,62,78,60),
+  P("Enes Kanter","Thunder","2010s",["C"],"Big-Man Scorer",83,80,64,56,86,64),
+  // -- Spurs (2014 champs) --
+  P("Kawhi Leonard","Spurs","2010s",["SF","SG"],"Two-Way Wing",79,88,96,74,74,84),
+  P("Tony Parker","Spurs","2010s",["PG"],"Slasher",74,82,70,84,56,74),
+  P("Tim Duncan","Spurs","2010s",["PF","C"],"Two-Way Big",83,80,92,74,86,62),
+  P("Manu Ginobili","Spurs","2010s",["SG"],"Two-Way Wing",78,80,78,82,62,80),
+  P("LaMarcus Aldridge","Spurs","2010s",["PF","C"],"Big-Man Scorer",83,86,80,64,82,76),
+  P("Danny Green","Spurs","2010s",["SG","SF"],"3&D Wing",78,72,84,64,60,84),
+  P("Patty Mills","Spurs","2010s",["PG"],"Sharpshooter",72,78,66,80,52,84),
+  P("Boris Diaw","Spurs","2010s",["PF","C"],"Floor General",80,76,74,84,74,74),
+  P("Tiago Splitter","Spurs","2010s",["C"],"Glue Guy",83,70,82,62,80,52),
+  P("Kyle Anderson","Spurs","2010s",["SF","PF"],"Glue Guy",81,72,82,76,70,68),
+  // -- Cavaliers (2016 champs) --
+  P("LeBron James","Cavaliers","2010s",["SF","PF"],"Two-Way Wing",81,95,86,94,82,78),
+  P("Kyrie Irving","Cavaliers","2010s",["PG","SG"],"Slasher",74,90,70,86,58,88),
+  P("Kevin Love","Cavaliers","2010s",["PF","C"],"Stretch Big",80,84,72,74,88,82),
+  P("Tristan Thompson","Cavaliers","2010s",["C","PF"],"Glue Guy",81,62,80,56,84,44),
+  P("J.R. Smith","Cavaliers","2010s",["SG"],"Sharpshooter",78,76,70,66,58,84),
+  P("Iman Shumpert","Cavaliers","2010s",["SG","SF"],"3&D Wing",77,72,84,68,62,76),
+  P("Channing Frye","Cavaliers","2010s",["C","PF"],"Stretch Big",83,76,62,58,72,86),
+  P("Matthew Dellavedova","Cavaliers","2010s",["PG"],"Role Player",74,72,78,80,54,76),
+  P("Tyronn Lue","Cavaliers","2010s",["PG"],"Role Player",72,72,72,78,52,74),
+  P("Richard Jefferson","Cavaliers","2010s",["SF"],"3&D Wing",79,72,76,68,64,78),
+  // -- Rockets --
+  P("James Harden","Rockets","2010s",["SG","PG"],"Scorer",77,94,66,90,66,88),
+  P("Chris Paul","Rockets","2010s",["PG"],"Floor General",72,85,84,95,60,84),
+  P("Dwight Howard","Rockets","2010s",["C"],"Rim Protector",82,74,88,56,90,40),
+  P("Clint Capela","Rockets","2010s",["C"],"Rim Protector",82,70,84,56,86,42),
+  P("Eric Gordon","Rockets","2010s",["SG"],"Sharpshooter",75,80,72,70,56,84),
+  P("Trevor Ariza","Rockets","2010s",["SF"],"3&D Wing",80,72,84,68,66,78),
+  P("Ryan Anderson","Rockets","2010s",["PF","C"],"Stretch Big",82,80,60,58,76,88),
+  P("P.J. Tucker","Rockets","2010s",["PF","SF"],"3&D Wing",78,66,86,66,72,78),
+  P("Patrick Beverley","Rockets","2010s",["PG"],"3&D Wing",73,72,88,76,60,76),
+  P("Luc Mbah a Moute","Rockets","2010s",["SF","PF"],"3&D Wing",80,66,86,66,68,68),
+  // -- Clippers (Lob City) --
+  P("Chris Paul","Clippers","2010s",["PG"],"Floor General",72,86,86,96,60,84),
+  P("Blake Griffin","Clippers","2010s",["PF"],"Big-Man Scorer",81,86,74,78,84,68),
+  P("DeAndre Jordan","Clippers","2010s",["C"],"Rim Protector",83,64,88,54,90,38),
+  P("J.J. Redick","Clippers","2010s",["SG"],"Sharpshooter",76,80,68,70,52,92),
+  P("Jamal Crawford","Clippers","2010s",["SG","PG"],"Sixth Man",77,82,64,78,52,82),
+  P("Matt Barnes","Clippers","2010s",["SF","PF"],"3&D Wing",79,72,82,68,70,76),
+  P("Caron Butler","Clippers","2010s",["SF"],"Scorer",79,80,72,72,68,78),
+  P("Austin Rivers","Clippers","2010s",["SG","PG"],"Sixth Man",76,78,66,74,54,76),
+  P("Spencer Hawes","Clippers","2010s",["C"],"Stretch Big",83,74,66,62,74,80),
+  P("Lou Williams","Clippers","2010s",["SG","PG"],"Sixth Man",73,84,62,80,52,82),
+  // -- Raptors (2019 champs) --
+  P("Kawhi Leonard","Raptors","2010s",["SF"],"Two-Way Wing",79,92,94,78,76,84),
+  P("Kyle Lowry","Raptors","2010s",["PG"],"Floor General",72,80,84,86,64,82),
+  P("DeMar DeRozan","Raptors","2010s",["SG","SF"],"Scorer",78,86,72,78,64,70),
+  P("Pascal Siakam","Raptors","2010s",["PF","SF"],"Two-Way Wing",81,82,82,72,78,72),
+  P("Fred VanVleet","Raptors","2010s",["PG"],"3&D Wing",73,78,82,80,54,82),
+  P("Serge Ibaka","Raptors","2010s",["PF","C"],"Rim Protector",82,76,88,58,78,74),
+  P("Marc Gasol","Raptors","2010s",["C"],"Two-Way Big",83,78,90,80,80,72),
+  P("Danny Green","Raptors","2010s",["SG","SF"],"3&D Wing",78,72,84,64,60,84),
+  P("Norman Powell","Raptors","2010s",["SG"],"3&D Wing",76,78,76,68,58,78),
+  P("Jonas Valanciunas","Raptors","2010s",["C"],"Big-Man Scorer",84,80,72,56,86,60),
+  // -- Grizzlies (Grit and Grind) --
+  P("Marc Gasol","Grizzlies","2010s",["C"],"Two-Way Big",83,80,90,80,82,72),
+  P("Mike Conley","Grizzlies","2010s",["PG"],"Floor General",73,80,82,86,56,82),
+  P("Zach Randolph","Grizzlies","2010s",["PF"],"Big-Man Scorer",81,84,70,68,88,66),
+  P("Tony Allen","Grizzlies","2010s",["SG","SF"],"3&D Wing",76,64,94,66,64,60),
+  P("Courtney Lee","Grizzlies","2010s",["SG"],"3&D Wing",77,74,82,68,58,80),
+  P("Mike Miller","Grizzlies","2010s",["SF"],"Sharpshooter",80,72,64,66,66,86),
+  P("Vince Carter","Grizzlies","2010s",["SG","SF"],"Sharpshooter",78,76,70,68,64,82),
+  P("Jeff Green","Grizzlies","2010s",["SF","PF"],"Scorer",80,80,72,68,72,76),
+  P("Beno Udrih","Grizzlies","2010s",["PG"],"Role Player",75,74,70,80,54,76),
+  P("JaMychal Green","Grizzlies","2010s",["PF"],"Glue Guy",81,72,76,60,78,70),
+
+  // ===================================================================== 2020s
+  // -- Nuggets (2023 champs) --
+  P("Nikola Jokic","Nuggets","2020s",["C"],"Floor General",83,94,80,97,92,80),
+  P("Jamal Murray","Nuggets","2020s",["PG"],"Scorer",76,86,74,84,60,84),
+  P("Aaron Gordon","Nuggets","2020s",["PF"],"Glue Guy",80,78,86,70,78,68),
+  P("Michael Porter Jr.","Nuggets","2020s",["SF"],"Sharpshooter",82,82,74,64,76,86),
+  P("Kentavious Caldwell-Pope","Nuggets","2020s",["SG"],"3&D Wing",77,74,84,66,56,82),
+  P("Bruce Brown","Nuggets","2020s",["SG","PF"],"Glue Guy",76,76,82,74,66,74),
+  P("Jeff Green","Nuggets","2020s",["PF","SF"],"Sixth Man",80,78,72,66,72,76),
+  P("Bones Hyland","Nuggets","2020s",["PG"],"Sixth Man",74,78,64,76,52,80),
+  P("Christian Braun","Nuggets","2020s",["SG","SF"],"3&D Wing",78,74,78,68,62,76),
+  P("Reggie Jackson","Nuggets","2020s",["PG"],"Scorer",75,78,64,78,54,78),
+  // -- Warriors (2022 champs) --
+  P("Stephen Curry","Warriors","2020s",["PG"],"Sharpshooter",74,94,72,88,62,99),
+  P("Klay Thompson","Warriors","2020s",["SG"],"Sharpshooter",78,82,76,62,60,92),
+  P("Draymond Green","Warriors","2020s",["PF","C"],"Glue Guy",78,62,92,86,82,62),
+  P("Andrew Wiggins","Warriors","2020s",["SF"],"3&D Wing",79,80,82,68,68,78),
+  P("Jordan Poole","Warriors","2020s",["SG"],"Scorer",76,82,64,76,54,82),
+  P("Jonathan Kuminga","Warriors","2020s",["PF","SF"],"Slasher",78,80,72,64,72,70),
+  P("Kevon Looney","Warriors","2020s",["C","PF"],"Glue Guy",81,64,82,66,84,52),
+  P("Gary Payton II","Warriors","2020s",["PG","SG"],"3&D Wing",75,70,90,72,62,72),
+  P("Otto Porter Jr.","Warriors","2020s",["SF","PF"],"3&D Wing",80,72,78,66,70,80),
+  P("Andre Iguodala","Warriors","2020s",["SF"],"Glue Guy",78,68,84,78,64,70),
+  // -- Bucks (2021 champs) --
+  P("Giannis Antetokounmpo","Bucks","2020s",["PF","C"],"Two-Way Big",83,93,92,80,90,62),
+  P("Khris Middleton","Bucks","2020s",["SF","SG"],"Two-Way Wing",79,84,78,78,66,84),
+  P("Jrue Holiday","Bucks","2020s",["PG","SG"],"Two-Way Wing",75,80,90,82,62,78),
+  P("Brook Lopez","Bucks","2020s",["C"],"Rim Protector",84,78,88,58,74,78),
+  P("Damian Lillard","Bucks","2020s",["PG"],"Sharpshooter",74,90,64,84,60,94),
+  P("Bobby Portis","Bucks","2020s",["PF","C"],"Sixth Man",82,80,68,60,82,76),
+  P("Pat Connaughton","Bucks","2020s",["SG","SF"],"3&D Wing",77,72,76,66,64,80),
+  P("Grayson Allen","Bucks","2020s",["SG"],"Sharpshooter",76,76,70,68,54,86),
+  P("Malcolm Brogdon","Bucks","2020s",["PG","SG"],"3&D Wing",77,78,76,80,62,84),
+  P("George Hill","Bucks","2020s",["PG"],"3&D Wing",75,72,80,76,56,80),
+  // -- Celtics (2024 champs) --
+  P("Jayson Tatum","Celtics","2020s",["SF","PF"],"Scorer",80,90,84,78,78,84),
+  P("Jaylen Brown","Celtics","2020s",["SG","SF"],"Two-Way Wing",78,86,82,72,68,80),
+  P("Jrue Holiday","Celtics","2020s",["PG"],"3&D Wing",75,78,88,80,62,78),
+  P("Derrick White","Celtics","2020s",["PG","SG"],"3&D Wing",76,78,86,78,60,82),
+  P("Kristaps Porzingis","Celtics","2020s",["C","PF"],"Stretch Big",87,84,86,60,78,82),
+  P("Al Horford","Celtics","2020s",["C","PF"],"Stretch Big",81,76,84,76,78,80),
+  P("Marcus Smart","Celtics","2020s",["PG","SG"],"3&D Wing",75,72,92,78,62,76),
+  P("Robert Williams III","Celtics","2020s",["C"],"Rim Protector",81,68,90,56,84,46),
+  P("Malcolm Brogdon","Celtics","2020s",["PG","SG"],"Sixth Man",77,80,74,80,62,84),
+  P("Payton Pritchard","Celtics","2020s",["PG"],"Sharpshooter",73,76,64,78,52,84),
+  // -- Suns --
+  P("Devin Booker","Suns","2020s",["SG","PG"],"Scorer",77,90,74,82,64,88),
+  P("Kevin Durant","Suns","2020s",["SF","PF"],"Scorer",83,95,80,82,74,92),
+  P("Bradley Beal","Suns","2020s",["SG"],"Scorer",76,84,70,78,60,82),
+  P("Deandre Ayton","Suns","2020s",["C"],"Big-Man Scorer",84,80,80,60,86,62),
+  P("Chris Paul","Suns","2020s",["PG"],"Floor General",72,80,80,92,58,82),
+  P("Mikal Bridges","Suns","2020s",["SF"],"3&D Wing",79,82,86,70,64,82),
+  P("Cameron Johnson","Suns","2020s",["SF","PF"],"Sharpshooter",80,78,72,64,70,86),
+  P("Jae Crowder","Suns","2020s",["PF","SF"],"3&D Wing",78,72,80,66,72,78),
+  P("Cameron Payne","Suns","2020s",["PG"],"Sixth Man",73,76,64,78,54,76),
+  P("Torrey Craig","Suns","2020s",["SF","PF"],"3&D Wing",79,70,82,66,70,72),
+  // -- Lakers (2020 champs) --
+  P("LeBron James","Lakers","2020s",["SF","PF"],"Two-Way Wing",81,90,80,90,78,78),
+  P("Anthony Davis","Lakers","2020s",["PF","C"],"Two-Way Big",82,88,94,66,90,62),
+  P("Russell Westbrook","Lakers","2020s",["PG"],"Slasher",75,80,72,84,74,60),
+  P("Austin Reaves","Lakers","2020s",["SG","PG"],"3&D Wing",77,78,74,78,58,80),
+  P("D'Angelo Russell","Lakers","2020s",["PG"],"Scorer",76,82,62,80,56,82),
+  P("Rui Hachimura","Lakers","2020s",["PF","SF"],"Scorer",80,80,70,62,72,78),
+  P("Dennis Schroder","Lakers","2020s",["PG"],"Slasher",73,80,68,82,54,76),
+  P("Kentavious Caldwell-Pope","Lakers","2020s",["SG"],"3&D Wing",77,74,84,66,56,82),
+  P("Alex Caruso","Lakers","2020s",["PG","SG"],"3&D Wing",77,70,90,76,60,74),
+  P("Kyle Kuzma","Lakers","2020s",["PF","SF"],"Scorer",81,80,70,64,74,76),
+  // -- 76ers --
+  P("Joel Embiid","76ers","2020s",["C"],"Two-Way Big",84,94,90,74,88,76),
+  P("James Harden","76ers","2020s",["PG","SG"],"Floor General",77,86,64,92,64,84),
+  P("Tyrese Maxey","76ers","2020s",["PG","SG"],"Scorer",74,86,72,82,56,84),
+  P("Tobias Harris","76ers","2020s",["PF","SF"],"Two-Way Wing",80,80,76,70,72,78),
+  P("Ben Simmons","76ers","2020s",["PG","PF"],"Glue Guy",82,72,92,86,80,48),
+  P("De'Anthony Melton","76ers","2020s",["PG","SG"],"3&D Wing",74,74,88,76,64,78),
+  P("Seth Curry","76ers","2020s",["SG","PG"],"Sharpshooter",74,76,62,74,52,92),
+  P("Danny Green","76ers","2020s",["SG","SF"],"3&D Wing",78,70,82,62,60,82),
+  P("Matisse Thybulle","76ers","2020s",["SG","SF"],"3&D Wing",77,64,94,66,60,66),
+  P("Georges Niang","76ers","2020s",["PF","SF"],"Sharpshooter",80,76,60,58,68,84),
+  // -- Mavericks --
+  P("Luka Doncic","Mavericks","2020s",["PG","SG"],"Scorer",79,95,72,95,82,84),
+  P("Kyrie Irving","Mavericks","2020s",["PG","SG"],"Slasher",74,90,72,86,56,88),
+  P("Tim Hardaway Jr.","Mavericks","2020s",["SG","SF"],"Sharpshooter",77,78,66,66,56,84),
+  P("Dereck Lively II","Mavericks","2020s",["C"],"Rim Protector",85,66,84,60,82,44),
+  P("P.J. Washington","Mavericks","2020s",["PF"],"3&D Wing",79,78,80,64,76,78),
+  P("Daniel Gafford","Mavericks","2020s",["C"],"Rim Protector",83,70,84,54,82,42),
+  P("Spencer Dinwiddie","Mavericks","2020s",["PG"],"Scorer",78,80,66,82,58,78),
+  P("Josh Green","Mavericks","2020s",["SG","SF"],"3&D Wing",77,74,80,66,60,78),
+  P("Maxi Kleber","Mavericks","2020s",["PF","C"],"Stretch Big",82,74,78,58,76,80),
+  P("Christian Wood","Mavericks","2020s",["PF","C"],"Big-Man Scorer",82,80,70,58,82,76),
+  // -- Timberwolves --
+  P("Anthony Edwards","Timberwolves","2020s",["SG"],"Scorer",76,90,80,78,70,84),
+  P("Karl-Anthony Towns","Timberwolves","2020s",["C","PF"],"Stretch Big",83,88,76,70,86,84),
+  P("Rudy Gobert","Timberwolves","2020s",["C"],"Rim Protector",85,68,96,54,92,40),
+  P("Mike Conley","Timberwolves","2020s",["PG"],"Floor General",73,76,80,86,54,82),
+  P("Jaden McDaniels","Timberwolves","2020s",["SF","PF"],"3&D Wing",81,76,90,64,68,76),
+  P("Naz Reid","Timberwolves","2020s",["C","PF"],"Sixth Man",81,80,72,58,80,80),
+  P("Nickeil Alexander-Walker","Timberwolves","2020s",["SG","PG"],"3&D Wing",78,74,84,72,58,78),
+  P("Jordan McLaughlin","Timberwolves","2020s",["PG"],"Role Player",71,72,76,80,52,74),
+  P("Kyle Anderson","Timberwolves","2020s",["SF","PF"],"Glue Guy",81,72,82,78,72,68),
+  P("Donte DiVincenzo","Timberwolves","2020s",["SG"],"3&D Wing",76,76,80,72,60,84),
+  // -- Thunder --
+  P("Shai Gilgeous-Alexander","Thunder","2020s",["PG","SG"],"Scorer",78,93,84,86,68,82),
+  P("Chet Holmgren","Thunder","2020s",["C","PF"],"Rim Protector",85,80,90,64,78,80),
+  P("Jalen Williams","Thunder","2020s",["SF","SG"],"Two-Way Wing",78,82,84,76,66,78),
+  P("Luguentz Dort","Thunder","2020s",["SG","SF"],"3&D Wing",76,72,90,68,62,76),
+  P("Josh Giddey","Thunder","2020s",["PG","SG"],"Floor General",80,78,68,86,72,72),
+  P("Isaiah Hartenstein","Thunder","2020s",["C"],"Glue Guy",84,70,82,68,82,58),
+  P("Cason Wallace","Thunder","2020s",["PG","SG"],"3&D Wing",75,72,86,72,58,78),
+  P("Aaron Wiggins","Thunder","2020s",["SG","SF"],"3&D Wing",77,74,78,66,62,78),
+  P("Isaiah Joe","Thunder","2020s",["SG"],"Sharpshooter",76,74,68,64,54,86),
+  P("Kenrich Williams","Thunder","2020s",["SF","PF"],"Glue Guy",78,70,80,68,72,72),
+  // -- Cavaliers --
+  P("Donovan Mitchell","Cavaliers","2020s",["SG"],"Scorer",73,89,76,80,64,84),
+  P("Darius Garland","Cavaliers","2020s",["PG"],"Floor General",73,82,66,88,54,82),
+  P("Evan Mobley","Cavaliers","2020s",["PF","C"],"Rim Protector",83,76,90,66,80,60),
+  P("Jarrett Allen","Cavaliers","2020s",["C"],"Rim Protector",83,74,84,58,84,48),
+  P("Max Strus","Cavaliers","2020s",["SG","SF"],"Sharpshooter",77,76,72,66,60,86),
+  P("Caris LeVert","Cavaliers","2020s",["SG","SF"],"Sixth Man",78,80,72,76,62,78),
+  P("Isaac Okoro","Cavaliers","2020s",["SF"],"3&D Wing",78,72,88,66,62,74),
+  P("Georges Niang","Cavaliers","2020s",["PF","SF"],"Sharpshooter",80,76,60,58,68,84),
+  P("Ty Jerome","Cavaliers","2020s",["PG","SG"],"Sixth Man",77,76,64,78,56,82),
+  P("Dean Wade","Cavaliers","2020s",["PF","C"],"3&D Wing",82,74,76,60,74,80),
+];
+
+// Decade offensive "pace inflation". Era-adjusts raw offense.
+const ERA_PACE = {
+  "1960s": 1.10,
+  "1970s": 1.06,
+  "1980s": 1.04,
+  "1990s": 0.98,
+  "2000s": 0.97,
+  "2010s": 1.00,
+  "2020s": 1.02,
+};
+
+// Unique franchises and decades that actually have players.
+const TEAMS = [...new Set(PLAYERS.map((p) => p.t))];
+const DECADES = [...new Set(PLAYERS.map((p) => p.d))].sort();
+
+/* ============================================================================
+ * PERFECT SEASON — game engine
+ * Seeded RNG, draft pool generation, transparent chemistry, and the
+ * game-by-game season simulation.
+ * ==========================================================================*/
+
+/* ---- Seeded RNG (mulberry32) ----------------------------------------------
+ * Deterministic so the Daily Challenge is identical for everyone on a date,
+ * and so a finished season can be re-simulated/shared reliably. */
+function makeRNG(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function hashString(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function shuffle(arr, rng) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ---- Spin: roll a random era + franchise and offer that roster ------------
+ * Mirrors 82-0's slot machine: a decade is rolled first, then a team within
+ * that decade (weighted toward richer rosters), and you choose from the
+ * legends that played for that team in that era. A player can only be drafted
+ * once, so all era-versions of a drafted name are removed from the pool. */
+function availableCombos(state) {
+  const taken = new Set(state.roster.filter(Boolean).map((r) => r.player.n));
+  const map = new Map();
+  for (const p of PLAYERS) {
+    if (taken.has(p.n)) continue;
+    const key = p.d + "|" + p.t;
+    if (!map.has(key)) map.set(key, { decade: p.d, team: p.t, candidates: [] });
+    map.get(key).candidates.push(p);
+  }
+  return [...map.values()];
+}
+
+// Weight a roster by size so fuller team-eras come up more often and you
+// usually get a real choice (a lone-legend roster still appears sometimes).
+function comboWeight(c) {
+  return c.candidates.length * c.candidates.length;
+}
+
+function pickWeighted(items, weightFn, rng) {
+  const total = items.reduce((s, it) => s + weightFn(it), 0);
+  let r = rng() * total;
+  for (const it of items) {
+    r -= weightFn(it);
+    if (r <= 0) return it;
+  }
+  return items[items.length - 1];
+}
+
+function spinPool(state) {
+  const all = availableCombos(state);
+  // Prefer deep, believable rosters. Step the bar down only if a draft has
+  // thinned the pool late on.
+  let combos =
+    all.filter((c) => c.candidates.length >= 8);
+  if (!combos.length) combos = all.filter((c) => c.candidates.length >= 5);
+  if (!combos.length) combos = all.filter((c) => c.candidates.length >= 3);
+  if (!combos.length) combos = all;
+
+  // Group by decade; roll a decade (weighted by how stacked it is), then a
+  // team within it (weighted toward deeper rosters).
+  const byDecade = {};
+  for (const c of combos) (byDecade[c.decade] = byDecade[c.decade] || []).push(c);
+  const decadeGroups = Object.entries(byDecade).map(([decade, teamCombos]) => ({
+    decade,
+    teamCombos,
+    candidates: teamCombos.flatMap((c) => c.candidates),
+  }));
+  const group = pickWeighted(decadeGroups, comboWeight, state.rng);
+  const chosen = pickWeighted(group.teamCombos, comboWeight, state.rng);
+  return {
+    decade: group.decade,
+    team: chosen.team,
+    candidates: shuffle(chosen.candidates, state.rng),
+  };
+}
+
+/* ---- Position fit ---------------------------------------------------------
+ * Players placed at a non-natural position lose some effectiveness. */
+function positionFit(player, pos) {
+  if (player.p[0] === pos) return 1.0; // primary spot
+  if (player.p.includes(pos)) return 0.94; // secondary spot
+  // Off-position: how far away on the PG..C spectrum?
+  const idx = (x) => POSITIONS.indexOf(x);
+  const dist = Math.min(...player.p.map((np) => Math.abs(idx(np) - idx(pos))));
+  return Math.max(0.74, 1.0 - dist * 0.09);
+}
+
+function adjustedPlayer(slot) {
+  const { player, pos } = slot;
+  const fit = positionFit(player, pos);
+  const pace = ERA_PACE[player.d] || 1.0;
+  return {
+    name: player.n,
+    pos,
+    fit,
+    o: player.o * fit * pace,
+    df: player.df * fit,
+    pm: player.pm * fit,
+    rb: player.rb * fit,
+    sh: player.sh,
+    raw: player,
+  };
+}
+
+/* ---- Transparent chemistry ------------------------------------------------
+ * Returns { mult, breakdown:[{label, delta, kind}] } where mult multiplies
+ * overall team strength. Everything here is shown to the player. */
+function computeChemistry(slots) {
+  const ap = slots.map(adjustedPlayer);
+  const breakdown = [];
+  const add = (label, delta) =>
+    breakdown.push({ label, delta, kind: delta >= 0 ? "good" : "bad" });
+
+  // Position coverage — reward a true 5-position lineup.
+  const distinctNatural = new Set();
+  ap.forEach((p) => {
+    if (p.raw.p[0] === p.pos) distinctNatural.add(p.pos);
+  });
+  if (distinctNatural.size === 5) add("Balanced lineup — every spot is a natural fit", 0.05);
+
+  // Off-position penalties.
+  const offPos = ap.filter((p) => p.fit < 0.95);
+  if (offPos.length)
+    add(`${offPos.length} player(s) out of position`, -0.03 * offPos.length);
+
+  // Spacing — modern game needs shooting.
+  const shooters = ap.filter((p) => p.sh >= 80).length;
+  if (shooters >= 2) add(`Elite floor spacing (${shooters} shooters)`, 0.05);
+  else if (shooters === 0) add("No outside shooting — defenses pack the paint", -0.08);
+
+  // Primary facilitator.
+  const bestPm = Math.max(...ap.map((p) => p.pm));
+  if (bestPm >= 90) add("Elite floor general distributes the ball", 0.05);
+  else if (bestPm < 74) add("No real playmaker — stagnant offense", -0.06);
+
+  // Rim protection.
+  const anchor = ap.some((p) => (p.pos === "C" || p.pos === "PF") && p.df >= 86);
+  if (anchor) add("Anchored defense with a rim protector", 0.05);
+  else add("No rim protector — soft interior defense", -0.05);
+
+  // Usage clash — too many ball-dominant scorers.
+  const highUsage = ap.filter((p) => p.o >= 88 && p.pm < 80).length;
+  if (highUsage >= 4) add("Too many ball-dominant scorers — only one ball", -0.07);
+  else if (highUsage === 3) add("Crowded shot diet", -0.02);
+
+  // Two-way versatility bonus.
+  const twoWay = ap.filter((p) => p.o >= 80 && p.df >= 84).length;
+  if (twoWay >= 2) add(`Two-way versatility (${twoWay} two-way players)`, 0.04);
+
+  // Era cohesion — same-era stacks gel; five different eras takes time.
+  const decades = ap.map((p) => p.raw.d);
+  const counts = {};
+  decades.forEach((d) => (counts[d] = (counts[d] || 0) + 1));
+  const topEra = Math.max(...Object.values(counts));
+  if (topEra >= 3) add("Same-era core — instant chemistry", 0.04);
+  else if (new Set(decades).size === 5) add("Five different eras — slow to gel", -0.04);
+
+  const sum = breakdown.reduce((s, b) => s + b.delta, 0);
+  const mult = Math.max(0.78, Math.min(1.14, 1 + sum));
+  return { mult, breakdown };
+}
+
+/* ---- Team strength categories --------------------------------------------*/
+function teamMetrics(slots) {
+  const ap = slots.map(adjustedPlayer);
+  const avg = (k) => ap.reduce((s, p) => s + p[k], 0) / ap.length;
+  const bestPm = Math.max(...ap.map((p) => p.pm));
+
+  const offense = avg("o") * 0.62 + bestPm * 0.18 + avg("sh") * 0.20;
+  const defense = avg("df") * 0.72 + avg("rb") * 0.28;
+  const playmaking = bestPm * 0.6 + avg("pm") * 0.4;
+  const rebounding = avg("rb");
+  const spacing = avg("sh");
+
+  return { offense, defense, playmaking, rebounding, spacing, ap };
+}
+
+/* ---- Per-game win probability --------------------------------------------*/
+function baseWinProb(metrics, chemMult) {
+  const overall = (metrics.offense * 0.5 + metrics.defense * 0.5) * chemMult;
+  // Tuned so a strong balanced legend roster wins ~75-88% of games, and a
+  // near-perfectly constructed elite team can flirt with 82-0.
+  const LEAGUE = 84.5;
+  const SCALE = 5.2;
+  const p = 1 / (1 + Math.exp(-(overall - LEAGUE) / SCALE));
+  return Math.max(0.06, Math.min(0.985, p));
+}
+
+/* ---- Simulate an 82-game season with hot-hand momentum -------------------*/
+function simulateSeason(slots, seed) {
+  const metrics = teamMetrics(slots);
+  const chem = computeChemistry(slots);
+  const p0 = baseWinProb(metrics, chem.mult);
+  const rng = makeRNG(seed ^ 0x9e3779b9);
+
+  const games = [];
+  let wins = 0,
+    losses = 0,
+    streak = 0,
+    longestWin = 0,
+    longestLoss = 0,
+    curLoss = 0;
+
+  for (let g = 0; g < 82; g++) {
+    // Momentum: confidence rides a win streak (and dips on a skid). Kept small
+    // so it adds drama without turning a perfect season into a coin flip.
+    const momentum = Math.max(-0.02, Math.min(0.012, streak * 0.002));
+    const p = Math.max(0.04, Math.min(0.99, p0 + momentum));
+    const win = rng() < p;
+    if (win) {
+      wins++;
+      streak = streak >= 0 ? streak + 1 : 1;
+      longestWin = Math.max(longestWin, streak);
+      curLoss = 0;
+    } else {
+      losses++;
+      streak = streak <= 0 ? streak - 1 : -1;
+      curLoss++;
+      longestLoss = Math.max(longestLoss, curLoss);
+    }
+    games.push(win);
+  }
+
+  // MVP — biggest all-around contribution.
+  const contrib = metrics.ap.map((p) => ({
+    name: p.name,
+    pos: p.pos,
+    score: p.o * 0.4 + p.df * 0.25 + p.pm * 0.2 + p.rb * 0.15,
+  }));
+  contrib.sort((a, b) => b.score - a.score);
+
+  // Weakness — lowest category relative to a soft baseline.
+  const cats = [
+    ["Offense", metrics.offense, 84],
+    ["Defense", metrics.defense, 84],
+    ["Playmaking", metrics.playmaking, 84],
+    ["Rebounding", metrics.rebounding, 80],
+    ["Spacing", metrics.spacing, 78],
+  ];
+  cats.sort((a, b) => a[1] - a[2] - (b[1] - b[2]));
+  const weakness = cats[0][0];
+
+  return {
+    wins,
+    losses,
+    games,
+    longestWin,
+    longestLoss,
+    perGame: p0,
+    chem,
+    metrics,
+    mvp: contrib[0],
+    weakness,
+    grade: gradeFor(wins),
+  };
+}
+
+function gradeFor(wins) {
+  if (wins === 82) return { letter: "82-0", title: "PERFECT", cls: "perfect" };
+  if (wins >= 73) return { letter: "S", title: "All-Time Great", cls: "s" };
+  if (wins >= 64) return { letter: "A", title: "Title Contender", cls: "a" };
+  if (wins >= 54) return { letter: "B", title: "Playoff Team", cls: "b" };
+  if (wins >= 41) return { letter: "C", title: "Play-In Hopeful", cls: "c" };
+  if (wins >= 28) return { letter: "D", title: "Lottery Bound", cls: "d" };
+  return { letter: "F", title: "Tank Commander", cls: "f" };
+}
+
+/* ============================================================================
+ * PERFECT SEASON — UI controller / game state machine
+ * ==========================================================================*/
+(function () {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+  const STORE_KEY = "perfectSeason.v1";
+
+  // -------- persistent records --------
+  function loadStore() {
+    try {
+      return JSON.parse(localStorage.getItem(STORE_KEY)) || {};
+    } catch {
+      return {};
+    }
+  }
+  function saveStore(s) {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(s));
+    } catch {}
+  }
+
+  // -------- screen routing --------
+  function show(id) {
+    document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+    $(id).classList.add("active");
+  }
+
+  function todayKey() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  // ====================== game state ======================
+  let state = null;
+
+  function newGame(mode) {
+    const isDaily = mode === "daily";
+    const seedStr = isDaily ? "daily:" + todayKey() : "endless:" + Date.now() + ":" + Math.random();
+    const seed = hashString(seedStr);
+    state = {
+      mode,
+      seedStr,
+      seed,
+      rng: makeRNG(seed),
+      roster: [null, null, null, null, null], // indexed by POSITIONS
+      pick: 0,
+      rerolls: 3,
+      wild: 1,
+      current: null, // { decade, team, candidates }
+      openPos: null, // currently expanded card index
+      pro: !!$("pro-toggle").checked, // Pro Scout Mode hides stats
+    };
+    state.current = spinPool(state);
+    renderDraft(true);
+    show("screen-draft");
+  }
+
+  function openSlots() {
+    return POSITIONS.map((p, i) => (state.roster[i] ? null : i)).filter((i) => i !== null);
+  }
+
+  // ====================== draft rendering ======================
+  function renderCourt(targetIdxs) {
+    const court = $("court");
+    court.innerHTML = "";
+    POSITIONS.forEach((pos, i) => {
+      const slot = document.createElement("div");
+      slot.className = "slot";
+      const r = state.roster[i];
+      if (r) {
+        slot.classList.add("filled");
+        slot.innerHTML = `<span class="slot-pos">${pos}</span>
+          <span class="slot-name">${r.player.n}</span>
+          <span class="slot-era">${r.player.d}</span>`;
+      } else {
+        if (targetIdxs && targetIdxs.includes(i)) slot.classList.add("target");
+        slot.innerHTML = `<span class="slot-pos">${pos}</span><span class="slot-empty">open</span>`;
+      }
+      court.appendChild(slot);
+    });
+  }
+
+  function ratingCell(key, label, val) {
+    const cls = val >= 86 ? "hi" : val < 68 ? "lo" : "";
+    return `<div class="rbar"><span class="rk">${label}</span><span class="rv ${cls}">${Math.round(val)}</span></div>`;
+  }
+
+  function candidateCard(player) {
+    const open = openSlots();
+    const card = document.createElement("div");
+    card.className = "pcard";
+    // Pro Scout Mode: hide ratings AND the archetype — you draft on
+    // name, team, era, position and listed height alone.
+    const meta = state.pro
+      ? `${formatHeight(player.hi)} · ${player.t} · ${player.d}`
+      : `${formatHeight(player.hi)} · ${player.t} · ${player.d} · <span class="pcard-arch">${player.a}</span>`;
+    const body = state.pro
+      ? `<div class="scout-note">🕶️ Scout's report only — trust your eye.</div>`
+      : `<div class="ratings">
+        ${ratingCell("o", "OFF", player.o)}
+        ${ratingCell("df", "DEF", player.df)}
+        ${ratingCell("pm", "PLY", player.pm)}
+        ${ratingCell("rb", "REB", player.rb)}
+        ${ratingCell("sh", "SHO", player.sh)}
+      </div>`;
+    card.innerHTML = `
+      <div class="pcard-top">
+        <div>
+          <div class="pcard-name">${player.n}</div>
+          <div class="pcard-meta">${meta}</div>
+        </div>
+        <div class="pcard-pos">${player.p.map((p) => `<span class="pos-pill">${p}</span>`).join("")}</div>
+      </div>
+      ${body}
+      <div class="pos-choose">
+        ${POSITIONS.map((pos, i) => {
+          const filled = !!state.roster[i];
+          const natural = player.p.includes(pos);
+          const cls = natural ? "natural" : "off";
+          return `<button class="pc-btn ${cls}" data-pos="${i}" ${filled ? "disabled" : ""}>${pos}</button>`;
+        }).join("")}
+      </div>`;
+
+    card.querySelector(".pcard-top").addEventListener("click", () => {
+      const wasOpen = card.classList.contains("open");
+      document.querySelectorAll(".pcard.open").forEach((c) => c.classList.remove("open"));
+      if (!wasOpen) {
+        card.classList.add("open");
+        renderCourt(open); // highlight where they can go
+      } else {
+        renderCourt();
+      }
+    });
+
+    card.querySelectorAll(".pc-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const idx = parseInt(btn.dataset.pos, 10);
+        if (state.roster[idx]) return;
+        draftPlayer(player, idx);
+      });
+    });
+
+    return card;
+  }
+
+  function renderCandidates() {
+    const wrap = $("candidates");
+    wrap.innerHTML = "";
+    state.current.candidates.forEach((p) => wrap.appendChild(candidateCard(p)));
+  }
+
+  function renderTokens() {
+    $("reroll-count").textContent = state.rerolls;
+    $("wild-count").textContent = state.wild;
+    $("btn-reroll").disabled = state.rerolls <= 0;
+    $("btn-wild").disabled = state.wild <= 0;
+    $("pick-label").textContent = `Pick ${Math.min(state.pick + 1, 5)} / 5`;
+  }
+
+  function renderDraft(animate) {
+    renderCourt();
+    renderTokens();
+    $("btn-sim").disabled = state.pick < 5;
+    const label = `${state.current.decade} · ${state.current.team}`;
+    if (animate) {
+      animateSpin(() => {
+        $("spinner-team").textContent = label;
+        renderCandidates();
+      });
+    } else {
+      $("spinner-team").textContent = label;
+      renderCandidates();
+    }
+  }
+
+  function animateSpin(done) {
+    const spinner = $("spinner");
+    const teamEl = $("spinner-team");
+    spinner.classList.add("spinning");
+    let ticks = 0;
+    const iv = setInterval(() => {
+      const d = DECADES[Math.floor(Math.random() * DECADES.length)];
+      const t = TEAMS[Math.floor(Math.random() * TEAMS.length)];
+      teamEl.textContent = `${d} · ${t}`;
+      if (++ticks > 10) {
+        clearInterval(iv);
+        spinner.classList.remove("spinning");
+        done();
+      }
+    }, 70);
+  }
+
+  // ====================== draft actions ======================
+  function draftPlayer(player, posIdx) {
+    state.roster[posIdx] = { player, pos: POSITIONS[posIdx] };
+    state.pick++;
+    if (state.pick >= 5) {
+      renderCourt();
+      renderTokens();
+      $("candidates").innerHTML = "";
+      $("spinner-team").textContent = "Lineup set!";
+      $("btn-sim").disabled = false;
+      $("btn-reroll").disabled = true;
+      $("btn-wild").disabled = true;
+    } else {
+      state.current = spinPool(state);
+      renderDraft(true);
+    }
+  }
+
+  function reroll() {
+    if (state.rerolls <= 0 || state.pick >= 5) return;
+    state.rerolls--;
+    state.current = spinTeam(state);
+    renderDraft(true);
+  }
+
+  // ---- wildcard ----
+  function openWild() {
+    if (state.wild <= 0 || state.pick >= 5) return;
+    renderWildList("");
+    $("wild-search").value = "";
+    show("screen-wild");
+    setTimeout(() => $("wild-search").focus(), 100);
+  }
+
+  function renderWildList(query) {
+    const taken = new Set(state.roster.filter(Boolean).map((r) => r.player.n));
+    const q = query.trim().toLowerCase();
+    const list = PLAYERS.filter(
+      (p) => !taken.has(p.n) && (!q || p.n.toLowerCase().includes(q) || p.t.toLowerCase().includes(q))
+    ).sort((a, b) => b.o + b.df - (a.o + a.df));
+
+    const wrap = $("wild-list");
+    wrap.innerHTML = "";
+    list.forEach((player) => {
+      const card = candidateCard(player);
+      // In wildcard mode, picking spends the token and closes the picker.
+      // Clone each button to strip the default draft handler, then re-bind.
+      card.querySelectorAll(".pc-btn").forEach((btn) => {
+        btn.replaceWith(btn.cloneNode(true));
+      });
+      card.querySelectorAll(".pc-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = parseInt(btn.dataset.pos, 10);
+          if (state.roster[idx]) return;
+          state.wild--;
+          draftPlayer(player, idx);
+          show("screen-draft");
+        });
+      });
+      wrap.appendChild(card);
+    });
+    if (!list.length) wrap.innerHTML = `<p style="color:var(--muted);text-align:center">No legends match.</p>`;
+  }
+
+  // ====================== simulation ======================
+  function runSimulation() {
+    const slots = state.roster.filter(Boolean);
+    const result = simulateSeason(slots, state.seed);
+    state.result = result;
+    show("screen-sim");
+
+    // build empty grid
+    const grid = $("sim-grid");
+    grid.innerHTML = "";
+    const cells = [];
+    for (let i = 0; i < 82; i++) {
+      const c = document.createElement("div");
+      c.className = "gcell";
+      grid.appendChild(c);
+      cells.push(c);
+    }
+    $("sim-bar-fill").style.width = "0%";
+    $("sim-wins").textContent = "0";
+    $("sim-losses").textContent = "0";
+
+    let w = 0,
+      l = 0,
+      i = 0;
+    const total = result.games.length;
+    const statuses = ["Tip-off…", "Early season grind…", "Midseason form…", "Playoff push…", "Down the stretch…"];
+
+    const iv = setInterval(() => {
+      const win = result.games[i];
+      const cell = cells[i];
+      cell.classList.add("show", win ? "w" : "l");
+      if (win) w++;
+      else l++;
+      $("sim-wins").textContent = w;
+      $("sim-losses").textContent = l;
+      $("sim-bar-fill").style.width = (w / total) * 100 + "%";
+      $("sim-status").textContent = statuses[Math.min(statuses.length - 1, Math.floor((i / total) * statuses.length))];
+      i++;
+      if (i >= total) {
+        clearInterval(iv);
+        setTimeout(showResult, 650);
+      }
+    }, 26);
+  }
+
+  // ====================== results ======================
+  function fitEmoji(fit) {
+    if (fit >= 1.0) return "🟢";
+    if (fit >= 0.94) return "🟡";
+    return "🔴";
+  }
+
+  function showResult() {
+    const r = state.result;
+    const slots = state.roster.filter(Boolean);
+
+    // records
+    const store = loadStore();
+    store.bestWins = Math.max(store.bestWins || 0, r.wins);
+    if (r.wins === 82) store.perfects = (store.perfects || 0) + 1;
+    store.played = (store.played || 0) + 1;
+    saveStore(store);
+
+    $("grade-badge").className = "grade-badge " + r.grade.cls;
+    $("grade-badge").textContent = r.grade.letter;
+    $("result-record").textContent = `${r.wins}–${r.losses}`;
+    $("result-title").textContent = r.grade.title;
+
+    // lineup with fit emoji
+    const lu = $("result-lineup");
+    lu.innerHTML = "";
+    POSITIONS.forEach((pos, i) => {
+      const slot = state.roster[i];
+      const ap = slot ? adjustedPlayer(slot) : null;
+      const div = document.createElement("div");
+      div.className = "rl-slot";
+      div.innerHTML = `<div class="rl-pos">${pos}</div>
+        <div class="rl-name">${slot.player.n}</div>
+        <div class="rl-fit">${fitEmoji(ap.fit)}</div>`;
+      lu.appendChild(div);
+    });
+
+    $("result-mvp").textContent = r.mvp.name;
+    $("result-chem").textContent = Math.round(r.chem.mult * 100) + "%";
+    $("result-streak").textContent = r.longestWin + " wins";
+    $("result-weak").textContent = r.weakness;
+
+    // Pro Scout Mode payoff — reveal the ratings you drafted blind.
+    const reveal = $("scout-reveal");
+    if (state.pro) {
+      const list = $("reveal-list");
+      list.innerHTML = "";
+      POSITIONS.forEach((pos, i) => {
+        const p = state.roster[i].player;
+        const row = document.createElement("div");
+        row.className = "reveal-row";
+        const cell = (label, val) => {
+          const cls = val >= 86 ? "hi" : val < 68 ? "lo" : "";
+          return `<span class="rv ${cls}" title="${label}">${val}</span>`;
+        };
+        row.innerHTML = `
+          <div class="reveal-id">
+            <span class="reveal-pos">${pos}</span>
+            <span class="reveal-name">${p.n}</span>
+            <span class="reveal-meta">${formatHeight(p.hi)} · ${p.a}</span>
+          </div>
+          <div class="reveal-ratings">
+            ${cell("Offense", p.o)}${cell("Defense", p.df)}${cell("Playmaking", p.pm)}${cell("Rebounding", p.rb)}${cell("Shooting", p.sh)}
+          </div>`;
+        list.appendChild(row);
+      });
+      reveal.hidden = false;
+    } else {
+      reveal.hidden = true;
+    }
+
+    const cl = $("chem-list");
+    cl.innerHTML = "";
+    r.chem.breakdown
+      .slice()
+      .sort((a, b) => b.delta - a.delta)
+      .forEach((b) => {
+        const li = document.createElement("li");
+        li.className = b.kind;
+        const sign = b.delta >= 0 ? "+" : "";
+        li.innerHTML = `<span>${b.label}</span><span class="cd">${sign}${Math.round(b.delta * 100)}%</span>`;
+        cl.appendChild(li);
+      });
+
+    $("share-toast").textContent = "";
+    show("screen-result");
+    if (r.wins === 82) confetti();
+  }
+
+  function buildShareText() {
+    const r = state.result;
+    const fits = POSITIONS.map((pos, i) => fitEmoji(adjustedPlayer(state.roster[i]).fit)).join("");
+    const tag = state.mode === "daily" ? `Daily ${todayKey()}` : "Endless";
+    return (
+      `🏀 PERFECT SEASON — ${tag}\n` +
+      `${r.wins}–${r.losses}  ·  Grade ${r.grade.letter} (${r.grade.title})\n` +
+      `Starting 5: ${fits}\n` +
+      `Chemistry ${Math.round(r.chem.mult * 100)}%  ·  Best streak ${r.longestWin}\n` +
+      `Can you go 82–0?`
+    );
+  }
+
+  async function share() {
+    const text = buildShareText();
+    try {
+      if (navigator.share) {
+        await navigator.share({ text });
+        return;
+      }
+    } catch {}
+    try {
+      await navigator.clipboard.writeText(text);
+      $("share-toast").textContent = "Copied to clipboard!";
+    } catch {
+      $("share-toast").textContent = text;
+    }
+  }
+
+  function confetti() {
+    const colors = ["#ffd24a", "#ff7a18", "#34d399", "#60a5fa", "#f87171"];
+    for (let i = 0; i < 80; i++) {
+      const c = document.createElement("div");
+      c.className = "confetti";
+      c.style.left = Math.random() * 100 + "vw";
+      c.style.background = colors[i % colors.length];
+      c.style.animation = `fall ${1.4 + Math.random() * 1.6}s ${Math.random()}s ease-in forwards`;
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 3600);
+    }
+  }
+
+  // ====================== home ======================
+  function renderHome() {
+    const store = loadStore();
+    const chips = [
+      ["Best record", store.bestWins ? `${store.bestWins}–${82 - store.bestWins}` : "—"],
+      ["Perfect 82–0", store.perfects || 0],
+      ["Seasons", store.played || 0],
+    ];
+    $("home-records").innerHTML = chips
+      .map((c) => `<div class="record-chip"><div class="rc-v">${c[1]}</div><div class="rc-k">${c[0]}</div></div>`)
+      .join("");
+    $("daily-label").textContent = `Today · ${todayKey()}`;
+    $("pro-toggle").checked = !!store.proMode;
+  }
+
+  // ====================== wiring ======================
+  $("btn-daily").addEventListener("click", () => newGame("daily"));
+  $("btn-endless").addEventListener("click", () => newGame("endless"));
+  $("pro-toggle").addEventListener("change", (e) => {
+    const s = loadStore();
+    s.proMode = e.target.checked;
+    saveStore(s);
+  });
+  $("btn-how").addEventListener("click", () => show("screen-how"));
+  $("btn-how-back").addEventListener("click", () => { renderHome(); show("screen-home"); });
+  $("btn-quit").addEventListener("click", () => { renderHome(); show("screen-home"); });
+  $("btn-reroll").addEventListener("click", reroll);
+  $("btn-wild").addEventListener("click", openWild);
+  $("btn-wild-cancel").addEventListener("click", () => show("screen-draft"));
+  $("wild-search").addEventListener("input", (e) => renderWildList(e.target.value));
+  $("btn-sim").addEventListener("click", runSimulation);
+  $("btn-share").addEventListener("click", share);
+  $("btn-again").addEventListener("click", () => newGame(state.mode));
+  $("btn-home").addEventListener("click", () => { renderHome(); show("screen-home"); });
+
+  renderHome();
+})();
+
+</script>
+  
+  
 </body>
 </html>
