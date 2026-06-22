@@ -434,7 +434,10 @@ html, body {
   animation: fade 0.4s ease;
 }
 .scout-reveal h3 { margin: 0 0 10px; font-size: 14px; color: var(--gold); }
+.reveal-legend { font-size: 10px; color: var(--muted); margin: -4px 0 12px; }
 .reveal-list { display: flex; flex-direction: column; gap: 8px; }
+.reveal-head { padding-bottom: 2px; }
+.reveal-head .rk { width: 26px; text-align: center; font-size: 9px; font-weight: 800; color: var(--muted); letter-spacing: 0.5px; }
 .reveal-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .reveal-id { display: flex; flex-direction: column; min-width: 0; }
 .reveal-id .reveal-pos { font-size: 10px; font-weight: 800; color: var(--accent2); }
@@ -594,6 +597,7 @@ html, body {
         <!-- Pro Scout Mode payoff: the stats you drafted blind, revealed -->
         <div class="scout-reveal" id="scout-reveal" hidden>
           <h3>🕶️ Scouting report revealed</h3>
+          <p class="reveal-legend">OFF offense · DEF defense · PLY playmaking · REB rebounding · SHO shooting</p>
           <div class="reveal-list" id="reveal-list"></div>
         </div>
 
@@ -1989,6 +1993,15 @@ function gradeFor(wins) {
     if (state.pro) {
       const list = $("reveal-list");
       list.innerHTML = "";
+      // Column header so each number's stat is clear.
+      const head = document.createElement("div");
+      head.className = "reveal-row reveal-head";
+      head.innerHTML =
+        `<div class="reveal-id"></div>` +
+        `<div class="reveal-ratings">` +
+        ["OFF", "DEF", "PLY", "REB", "SHO"].map((k) => `<span class="rk">${k}</span>`).join("") +
+        `</div>`;
+      list.appendChild(head);
       POSITIONS.forEach((pos, i) => {
         const p = state.roster[i].player;
         const row = document.createElement("div");
