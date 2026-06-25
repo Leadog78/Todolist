@@ -19,6 +19,7 @@ A fast, polished, fully self-contained web game inspired by [82-0.com](https://w
 3. **Build chemistry.** Spacing, a real playmaker, and a rim protector all matter. Stacking ball-dominant scorers backfires.
 4. **Spend your tokens.** **Reroll** (×3) deals a new era+team; the one-time **Wildcard** (×1) lets you draft *any* legend.
 5. **Simulate 82 games** and see your record, letter grade, MVP, best win streak, and biggest weakness.
+6. **Run the playoffs.** Make the cut and your record sets your **seed**, then you battle through a 4-round best-of-7 bracket (Round 1 → Conf. Semis → Conf. Finals → Finals) against progressively tougher opponents, with home-court for high seeds. Survive all four rounds to win a **ring** 🏆 — even an 82–0 juggernaut still has to earn it.
 
 ### Modes & options
 - **Daily Challenge** — seeded so everyone gets the same draft each day.

@@ -464,6 +464,40 @@ html, body {
 
 .result-actions { display: flex; flex-direction: column; gap: 10px; }
 .share-toast { color: var(--good); font-weight: 700; min-height: 20px; margin-top: 10px; }
+.missed-note { color: var(--muted); font-size: 13px; text-align: center; margin: 0; }
+
+/* playoffs */
+#screen-playoffs { justify-content: center; }
+.playoffs-inner { width: 100%; max-width: 460px; margin: auto; text-align: center; }
+.po-seed { font-size: 15px; font-weight: 700; color: var(--muted); margin-bottom: 18px; }
+.po-seed b { color: var(--gold); }
+.bracket { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.po-series {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 14px; text-align: left;
+  opacity: 0; transform: translateY(10px); transition: opacity 0.3s, transform 0.3s, border-color 0.3s;
+}
+.po-series.show { opacity: 1; transform: none; }
+.po-series.win { border-color: var(--good); }
+.po-series.loss { border-color: var(--bad); }
+.po-series .po-round { font-size: 11px; color: var(--accent2); font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+.po-series .po-opp { font-size: 14px; font-weight: 700; margin-top: 2px; }
+.po-series .po-right { text-align: right; flex: 0 0 auto; }
+.po-series .po-score { font-size: 22px; font-weight: 900; }
+.po-series.win .po-score { color: var(--good); }
+.po-series.loss .po-score { color: var(--bad); }
+.po-series .po-badge { font-size: 10px; font-weight: 800; letter-spacing: 0.5px; }
+.po-series.win .po-badge { color: var(--good); }
+.po-series.loss .po-badge { color: var(--bad); }
+.po-outcome { min-height: 90px; margin-bottom: 8px; }
+.po-banner {
+  font-size: 30px; font-weight: 900; letter-spacing: -0.5px; padding: 18px;
+  border-radius: 16px; animation: fade 0.5s ease;
+}
+.po-banner.champ { background: linear-gradient(135deg, var(--gold), var(--accent)); color: #1a1100; box-shadow: 0 0 36px rgba(255,210,74,0.6); }
+.po-banner.out { background: var(--panel); border: 1px solid var(--line); color: var(--ink); font-size: 20px; }
+.po-banner .po-sub { display: block; font-size: 13px; font-weight: 600; margin-top: 6px; opacity: 0.85; }
 
 /* confetti */
 .confetti { position: fixed; top: -10px; width: 9px; height: 14px; opacity: 0.9; z-index: 50; pointer-events: none; }
@@ -607,11 +641,28 @@ html, body {
         </details>
 
         <div class="result-actions">
-          <button class="btn btn-primary" id="btn-share">Share result</button>
+          <button class="btn btn-primary" id="btn-playoffs">🏆 Enter Playoffs</button>
+          <p class="missed-note" id="missed-note" hidden>Missed the playoffs — sharpen the roster and try again.</p>
+          <button class="btn btn-secondary" id="btn-share">Share result</button>
           <button class="btn btn-secondary" id="btn-again">Play again</button>
           <button class="link-btn" id="btn-home">Main menu</button>
         </div>
         <p class="share-toast" id="share-toast"></p>
+      </div>
+    </section>
+
+    <!-- ===================== PLAYOFFS ===================== -->
+    <section id="screen-playoffs" class="screen">
+      <div class="playoffs-inner">
+        <div class="po-seed" id="po-seed"></div>
+        <div class="bracket" id="bracket"></div>
+        <div class="po-outcome" id="po-outcome"></div>
+        <div class="result-actions" id="po-actions" hidden>
+          <button class="btn btn-primary" id="btn-po-share">Share result</button>
+          <button class="btn btn-secondary" id="btn-po-again">Play again</button>
+          <button class="link-btn" id="btn-po-home">Main menu</button>
+        </div>
+        <p class="share-toast" id="po-toast"></p>
       </div>
     </section>
 
@@ -1627,6 +1678,7 @@ function simulateSeason(slots, seed) {
     perGame: p0,
     chem,
     metrics,
+    overall: (metrics.offense * 0.5 + metrics.defense * 0.5) * chem.mult,
     mvp: contrib[0],
     weakness,
     grade: gradeFor(wins),
@@ -1641,6 +1693,60 @@ function gradeFor(wins) {
   if (wins >= 41) return { letter: "C", title: "Play-In Hopeful", cls: "c" };
   if (wins >= 28) return { letter: "D", title: "Lottery Bound", cls: "d" };
   return { letter: "F", title: "Tank Commander", cls: "f" };
+}
+
+/* ---- Playoffs --------------------------------------------------------------
+ * Your regular-season win total sets your seed; you then run a 4-round
+ * best-of-7 bracket against progressively tougher opponents. A high seed earns
+ * home-court advantage. Win all four rounds for a ring. */
+function seedForWins(wins) {
+  if (wins >= 64) return 1;
+  if (wins >= 58) return 2;
+  if (wins >= 54) return 3;
+  if (wins >= 50) return 4;
+  if (wins >= 46) return 5;
+  if (wins >= 42) return 6;
+  if (wins >= 38) return 7;
+  if (wins >= 34) return 8;
+  return 0; // missed the playoffs
+}
+
+const PLAYOFF_ROUNDS = [
+  { name: "Round 1", opp: "the 8-seed Upstarts", oppOverall: 87 },
+  { name: "Conf. Semifinals", opp: "a Division Rival", oppOverall: 91 },
+  { name: "Conf. Finals", opp: "the No. 1 Seed", oppOverall: 95 },
+  { name: "The Finals", opp: "the All-Time Team", oppOverall: 99 },
+];
+
+function simulatePlayoffs(result, seed, baseSeed) {
+  const rng = makeRNG(baseSeed ^ 0x51ed270b);
+  const homeCourt = (4.5 - seed) * 0.008; // +/- ~0.03 per game by seed
+  const rounds = [];
+  let champion = true;
+  let exitRound = null;
+
+  for (let i = 0; i < PLAYOFF_ROUNDS.length; i++) {
+    const R = PLAYOFF_ROUNDS[i];
+    let p = 1 / (1 + Math.exp(-(result.overall - R.oppOverall) / 5.2)) + homeCourt;
+    p = Math.max(0.08, Math.min(0.93, p));
+    let w = 0,
+      l = 0;
+    const games = [];
+    while (w < 4 && l < 4) {
+      const win = rng() < p;
+      if (win) w++;
+      else l++;
+      games.push(win);
+    }
+    const won = w === 4;
+    rounds.push({ name: R.name, opp: R.opp, w, l, won, games });
+    if (!won) {
+      champion = false;
+      exitRound = R.name;
+      break;
+    }
+  }
+  return { seed, rounds, champion, exitRound };
 }
 
 /* ============================================================================
@@ -2039,26 +2145,105 @@ function gradeFor(wins) {
         cl.appendChild(li);
       });
 
+    // Playoffs gate — seed by record, or "missed the playoffs".
+    state.playoffs = null;
+    state.seedNum = seedForWins(r.wins);
+    const made = state.seedNum > 0;
+    $("btn-playoffs").hidden = !made;
+    $("missed-note").hidden = made;
+
     $("share-toast").textContent = "";
     show("screen-result");
     if (r.wins === 82) confetti();
+  }
+
+  // ====================== playoffs ======================
+  function runPlayoffs() {
+    const r = state.result;
+    const po = simulatePlayoffs(r, state.seedNum, state.seed);
+    state.playoffs = po;
+
+    $("po-seed").innerHTML = `Entered the playoffs as the <b>#${po.seed} seed</b> (${r.wins}–${r.losses})`;
+    const bracket = $("bracket");
+    bracket.innerHTML = "";
+    $("po-outcome").innerHTML = "";
+    $("po-actions").hidden = true;
+    $("po-toast").textContent = "";
+    show("screen-playoffs");
+
+    // Build the (hidden) series rows, then reveal one at a time.
+    const rows = po.rounds.map((s) => {
+      const div = document.createElement("div");
+      div.className = "po-series " + (s.won ? "win" : "loss");
+      div.innerHTML = `
+        <div>
+          <div class="po-round">${s.name}</div>
+          <div class="po-opp">vs ${s.opp}</div>
+        </div>
+        <div class="po-right">
+          <div class="po-score">${s.w}–${s.l}</div>
+          <div class="po-badge">${s.won ? "SERIES WON" : "ELIMINATED"}</div>
+        </div>`;
+      bracket.appendChild(div);
+      return div;
+    });
+
+    let idx = 0;
+    const reveal = () => {
+      if (idx < rows.length) {
+        rows[idx].classList.add("show");
+        idx++;
+        setTimeout(reveal, 850);
+      } else {
+        finishPlayoffs(po);
+      }
+    };
+    setTimeout(reveal, 350);
+  }
+
+  function finishPlayoffs(po) {
+    const store = loadStore();
+    if (po.champion) {
+      store.titles = (store.titles || 0) + 1;
+      if (state.result.wins === 82) store.rings820 = (store.rings820 || 0) + 1;
+    }
+    saveStore(store);
+
+    const out = $("po-outcome");
+    if (po.champion) {
+      const perfect = state.result.wins === 82;
+      out.innerHTML = `<div class="po-banner champ">🏆 CHAMPIONS
+        <span class="po-sub">${perfect ? "82–0 AND a ring — the perfect season." : "Four rounds survived. You won it all."}</span></div>`;
+      confetti();
+    } else {
+      out.innerHTML = `<div class="po-banner out">Eliminated in ${po.exitRound}
+        <span class="po-sub">A strong run — but the ring slipped away.</span></div>`;
+    }
+    $("po-actions").hidden = false;
   }
 
   function buildShareText() {
     const r = state.result;
     const fits = POSITIONS.map((pos, i) => fitEmoji(adjustedPlayer(state.roster[i]).fit)).join("");
     const tag = state.mode === "daily" ? `Daily ${todayKey()}` : "Endless";
-    return (
+    let line =
       `🏀 PERFECT SEASON — ${tag}\n` +
       `${r.wins}–${r.losses}  ·  Grade ${r.grade.letter} (${r.grade.title})\n` +
       `Starting 5: ${fits}\n` +
-      `Chemistry ${Math.round(r.chem.mult * 100)}%  ·  Best streak ${r.longestWin}\n` +
-      `Can you go 82–0?`
-    );
+      `Chemistry ${Math.round(r.chem.mult * 100)}%  ·  Best streak ${r.longestWin}`;
+    if (state.playoffs) {
+      const po = state.playoffs;
+      line += po.champion
+        ? `\n🏆 NBA CHAMPIONS (#${po.seed} seed)`
+        : `\nPlayoffs: out in ${po.exitRound} (#${po.seed} seed)`;
+    }
+    return line + `\nCan you go 82–0 and win it all?`;
   }
 
   async function share() {
     const text = buildShareText();
+    // Post feedback to whichever screen's toast is visible.
+    const toast = $("screen-playoffs").classList.contains("active") ? $("po-toast") : $("share-toast");
     try {
       if (navigator.share) {
         await navigator.share({ text });
@@ -2067,9 +2252,9 @@ function gradeFor(wins) {
     } catch {}
     try {
       await navigator.clipboard.writeText(text);
-      $("share-toast").textContent = "Copied to clipboard!";
+      toast.textContent = "Copied to clipboard!";
     } catch {
-      $("share-toast").textContent = text;
+      toast.textContent = text;
     }
   }
 
@@ -2091,6 +2276,7 @@ function gradeFor(wins) {
     const store = loadStore();
     const chips = [
       ["Best record", store.bestWins ? `${store.bestWins}–${82 - store.bestWins}` : "—"],
+      ["Rings 🏆", store.titles || 0],
       ["Perfect 82–0", store.perfects || 0],
       ["Seasons", store.played || 0],
     ];
@@ -2120,6 +2306,10 @@ function gradeFor(wins) {
   $("btn-share").addEventListener("click", share);
   $("btn-again").addEventListener("click", () => newGame(state.mode));
   $("btn-home").addEventListener("click", () => { renderHome(); show("screen-home"); });
+  $("btn-playoffs").addEventListener("click", runPlayoffs);
+  $("btn-po-share").addEventListener("click", share);
+  $("btn-po-again").addEventListener("click", () => newGame(state.mode));
+  $("btn-po-home").addEventListener("click", () => { renderHome(); show("screen-home"); });
 
   renderHome();
 })();
