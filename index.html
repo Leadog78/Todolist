@@ -1506,10 +1506,14 @@ function spinPool(state) {
   if (!combos.length) combos = all.filter((c) => c.candidates.length >= 3);
   if (!combos.length) combos = all;
 
-  // Never deal a team-era already dealt this game (unless the pool is
-  // exhausted) — repeats feel like a broken slot machine.
+  // Never deal a team-era already dealt this game, and (endless mode) avoid
+  // ones dealt in the last few games too — repeats feel like a broken slot
+  // machine. Relax the cross-game rule first if the pool runs dry.
   const recent = state.recent || [];
-  const fresh = combos.filter((c) => !recent.includes(c.decade + "|" + c.team));
+  const block = state.blocklist || [];
+  const key = (c) => c.decade + "|" + c.team;
+  let fresh = combos.filter((c) => !recent.includes(key(c)) && !block.includes(key(c)));
+  if (!fresh.length) fresh = combos.filter((c) => !recent.includes(key(c)));
   if (fresh.length) combos = fresh;
 
   // Uniform pick — every eligible team-era is equally likely.
@@ -1812,13 +1816,22 @@ function simulatePlayoffs(result, seed, baseSeed) {
   // the fetch fails silently and only the device-local board is shown.
   const API_BASE = "";
   let globalScores = null; // null = unavailable; [] = reachable but empty
+  let globalStatus = null; // "unconfigured" = API answered 503 (no Redis store yet)
   function fetchGlobalScores() {
     try {
       fetch(API_BASE + "/api/scores", { cache: "no-store" })
-        .then((r) => (r.ok ? r.json() : null))
+        .then((r) => {
+          if (r.status === 503) {
+            globalStatus = "unconfigured";
+            renderBoards();
+            return null;
+          }
+          return r.ok ? r.json() : null;
+        })
         .then((data) => {
           if (data && Array.isArray(data.scores)) {
             globalScores = data.scores;
+            globalStatus = "ok";
             renderBoards();
           }
         })
@@ -1899,14 +1912,29 @@ function simulatePlayoffs(result, seed, baseSeed) {
       rerolls: 3,
       wild: 1,
       recent: [], // every team-era key dealt this game — never repeated
+      // Endless mode also avoids team-eras dealt in recent games (persisted);
+      // daily must stay identical for everyone, so it ignores that history.
+      blocklist: isDaily ? [] : loadStore().recentDeals || [],
       scoreTs: null, // this season's high-score entry id, if saved
       current: null, // { decade, team, candidates }
       openPos: null, // currently expanded card index
       pro: !!$("pro-toggle").checked, // Pro Scout Mode hides stats
     };
-    state.current = spinPool(state);
+    dealNext();
     renderDraft(true);
     show("screen-draft");
+  }
+
+  // Spin, and (endless mode) remember the deal across games so the same
+  // team-era can't come up again for roughly three full drafts.
+  function dealNext() {
+    state.current = spinPool(state);
+    if (state.mode !== "daily") {
+      const s = loadStore();
+      const key = state.current.decade + "|" + state.current.team;
+      s.recentDeals = [...(s.recentDeals || []).filter((k) => k !== key), key].slice(-24);
+      saveStore(s);
+    }
   }
 
   function openSlots() {
@@ -2058,7 +2086,7 @@ function simulatePlayoffs(result, seed, baseSeed) {
       $("btn-reroll").disabled = true;
       $("btn-wild").disabled = true;
     } else {
-      state.current = spinPool(state);
+      dealNext();
       renderDraft(true);
     }
   }
@@ -2066,7 +2094,7 @@ function simulatePlayoffs(result, seed, baseSeed) {
   function reroll() {
     if (state.rerolls <= 0 || state.pick >= 5) return;
     state.rerolls--;
-    state.current = spinPool(state);
+    dealNext();
     renderDraft(true);
   }
 
@@ -2439,6 +2467,10 @@ function simulatePlayoffs(result, seed, baseSeed) {
     let html = "";
     if (globalScores)
       html += boardHTML("🌍 Global Top 10", globalScores.slice(0, HS_MAX), "No global scores yet — be the first!");
+    else if (globalStatus === "unconfigured")
+      html +=
+        `<div class="hs-head">🌍 Global Top 10</div>` +
+        `<div class="hs-board"><div class="hs-empty">Not connected yet — add the free Upstash Redis store to this Vercel project and redeploy (see README).</div></div>`;
     html += boardHTML(
       globalScores ? "📱 This device" : "🏅 High Scores",
       local,
