@@ -202,6 +202,7 @@ html, body {
 .highscores { margin-top: 18px; width: 100%; max-width: 420px; margin-left: auto; margin-right: auto; }
 .hs-head { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
 .hs-board { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 6px 14px; text-align: left; }
+.hs-board + .hs-head { margin-top: 16px; }
 .hs-line { display: grid; grid-template-columns: 24px 1fr 62px 56px 30px; gap: 6px; padding: 6px 0; font-size: 14px; align-items: center; }
 .hs-line + .hs-line { border-top: 1px solid var(--line); }
 .hs-line.head { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -1479,10 +1480,10 @@ function shuffle(arr, rng) {
 }
 
 /* ---- Spin: roll a random era + franchise and offer that roster ------------
- * Mirrors 82-0's slot machine: a decade is rolled first, then a team within
- * that decade (weighted toward richer rosters), and you choose from the
- * legends that played for that team in that era. A player can only be drafted
- * once, so all era-versions of a drafted name are removed from the pool. */
+ * Every eligible team-era is equally likely (uniform pick — no weighting),
+ * and a team-era already dealt earlier in the same game is never dealt
+ * again. A player can only be drafted once, so all era-versions of a
+ * drafted name are removed from the pool. */
 function availableCombos(state) {
   const taken = new Set(state.roster.filter(Boolean).map((r) => r.player.n));
   const map = new Map();
@@ -1495,22 +1496,6 @@ function availableCombos(state) {
   return [...map.values()];
 }
 
-// Weight a roster by size so fuller team-eras come up more often and you
-// usually get a real choice (a lone-legend roster still appears sometimes).
-function comboWeight(c) {
-  return c.candidates.length * c.candidates.length;
-}
-
-function pickWeighted(items, weightFn, rng) {
-  const total = items.reduce((s, it) => s + weightFn(it), 0);
-  let r = rng() * total;
-  for (const it of items) {
-    r -= weightFn(it);
-    if (r <= 0) return it;
-  }
-  return items[items.length - 1];
-}
-
 function spinPool(state) {
   const all = availableCombos(state);
   // Prefer deep, believable rosters. Step the bar down only if a draft has
@@ -1521,26 +1506,17 @@ function spinPool(state) {
   if (!combos.length) combos = all.filter((c) => c.candidates.length >= 3);
   if (!combos.length) combos = all;
 
-  // Never deal a team-era seen in the last few spins (unless nothing else
-  // is left) — legal repeats still feel like a broken slot machine.
+  // Never deal a team-era already dealt this game (unless the pool is
+  // exhausted) — repeats feel like a broken slot machine.
   const recent = state.recent || [];
   const fresh = combos.filter((c) => !recent.includes(c.decade + "|" + c.team));
   if (fresh.length) combos = fresh;
 
-  // Group by decade; roll a decade (weighted by how stacked it is), then a
-  // team within it (weighted toward deeper rosters).
-  const byDecade = {};
-  for (const c of combos) (byDecade[c.decade] = byDecade[c.decade] || []).push(c);
-  const decadeGroups = Object.entries(byDecade).map(([decade, teamCombos]) => ({
-    decade,
-    teamCombos,
-    candidates: teamCombos.flatMap((c) => c.candidates),
-  }));
-  const group = pickWeighted(decadeGroups, comboWeight, state.rng);
-  const chosen = pickWeighted(group.teamCombos, comboWeight, state.rng);
-  state.recent = [...recent.slice(-2), group.decade + "|" + chosen.team];
+  // Uniform pick — every eligible team-era is equally likely.
+  const chosen = combos[Math.floor(state.rng() * combos.length)];
+  state.recent = [...recent, chosen.decade + "|" + chosen.team];
   return {
-    decade: group.decade,
+    decade: chosen.decade,
     team: chosen.team,
     candidates: shuffle(chosen.candidates, state.rng),
   };
@@ -1829,6 +1805,43 @@ function simulatePlayoffs(result, seed, baseSeed) {
     const worst = scores[scores.length - 1];
     return wins > worst.wins || (wins === worst.wins && streak > worst.streak);
   }
+
+  // -------- global leaderboard (optional backend) --------
+  // Backed by /api/scores when the game is hosted on Vercel with a Redis
+  // store attached (see README). Anywhere else (GitHub Pages, a local file)
+  // the fetch fails silently and only the device-local board is shown.
+  const API_BASE = "";
+  let globalScores = null; // null = unavailable; [] = reachable but empty
+  function fetchGlobalScores() {
+    try {
+      fetch(API_BASE + "/api/scores", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data && Array.isArray(data.scores)) {
+            globalScores = data.scores;
+            renderBoards();
+          }
+        })
+        .catch(() => {});
+    } catch {}
+  }
+  function submitGlobalScore(entry) {
+    try {
+      fetch(API_BASE + "/api/scores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entry),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data && Array.isArray(data.scores)) {
+            globalScores = data.scores;
+            renderBoards();
+          }
+        })
+        .catch(() => {});
+    } catch {}
+  }
   function saveHighScore() {
     if (!state || !state.result || state.scoreTs) return;
     const ini =
@@ -1850,6 +1863,7 @@ function simulatePlayoffs(result, seed, baseSeed) {
     store.scores = scores.slice(0, HS_MAX);
     store.lastIni = ini;
     saveStore(store);
+    submitGlobalScore(entry);
     const rank = store.scores.indexOf(entry) + 1;
     state.scoreTs = rank > 0 ? entry.ts : null;
     $("hs-entry-title").textContent =
@@ -1884,7 +1898,7 @@ function simulatePlayoffs(result, seed, baseSeed) {
       pick: 0,
       rerolls: 3,
       wild: 1,
-      recent: [], // last few dealt team-era keys, to stop repeats
+      recent: [], // every team-era key dealt this game — never repeated
       scoreTs: null, // this season's high-score entry id, if saved
       current: null, // { decade, team, candidates }
       openPos: null, // currently expanded card index
@@ -2311,6 +2325,7 @@ function simulatePlayoffs(result, seed, baseSeed) {
         if (sc) {
           sc.ring = true;
           store.scores.sort(sortScores);
+          submitGlobalScore(sc);
         }
       }
     }
@@ -2393,23 +2408,43 @@ function simulatePlayoffs(result, seed, baseSeed) {
     $("daily-label").textContent = `Today · ${todayKey()}`;
     $("pro-toggle").checked = !!store.proMode;
 
-    // High-score board
-    const scores = getScores(store);
-    $("highscores").innerHTML =
-      `<div class="hs-head">🏅 High Scores</div>` +
+    renderBoards();
+    fetchGlobalScores();
+  }
+
+  function boardRow(s, i) {
+    // Server data reaches innerHTML — sanitize every field.
+    const ini = String(s.ini || "???").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3) || "???";
+    const wins = Math.max(0, Math.min(82, Math.round(Number(s.wins) || 0)));
+    const streak = Math.max(0, Math.min(82, Math.round(Number(s.streak) || 0)));
+    return (
+      `<div class="hs-line${i === 0 ? " first" : ""}"><span>${i + 1}</span>` +
+      `<span class="h-ini">${ini}</span><span class="hv">${wins}–${82 - wins}</span>` +
+      `<span>${streak}W</span><span>${s.ring === true ? "💍" : "—"}</span></div>`
+    );
+  }
+
+  function boardHTML(title, scores, emptyMsg) {
+    return (
+      `<div class="hs-head">${title}</div>` +
       `<div class="hs-board">` +
       `<div class="hs-line head"><span>#</span><span>Player</span><span>Record</span><span>Streak</span><span>Ring</span></div>` +
-      (scores.length
-        ? scores
-            .map(
-              (s, i) =>
-                `<div class="hs-line${i === 0 ? " first" : ""}"><span>${i + 1}</span>` +
-                `<span class="h-ini">${s.ini}</span><span class="hv">${s.wins}–${s.losses}</span>` +
-                `<span>${s.streak}W</span><span>${s.ring ? "💍" : "—"}</span></div>`
-            )
-            .join("")
-        : `<div class="hs-empty">No scores yet — sim a season to claim the board.</div>`) +
-      `</div>`;
+      (scores.length ? scores.map(boardRow).join("") : `<div class="hs-empty">${emptyMsg}</div>`) +
+      `</div>`
+    );
+  }
+
+  function renderBoards() {
+    const local = getScores(loadStore());
+    let html = "";
+    if (globalScores)
+      html += boardHTML("🌍 Global Top 10", globalScores.slice(0, HS_MAX), "No global scores yet — be the first!");
+    html += boardHTML(
+      globalScores ? "📱 This device" : "🏅 High Scores",
+      local,
+      "No scores yet — sim a season to claim the board."
+    );
+    $("highscores").innerHTML = html;
   }
 
   // ====================== wiring ======================

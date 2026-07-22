@@ -26,6 +26,15 @@ The repo is Vercel-ready (`vercel.json` marks it as a plain static site — no f
 
 Or from the CLI: `npx vercel --prod` from the repo root.
 
+### Global leaderboard (Vercel only)
+
+The repo ships a serverless endpoint (`api/scores.js`) that powers a shared **🌍 Global Top 10** across every player and device. It needs a free Redis store:
+
+1. In your Vercel project: **Storage** (or **Marketplace**) → add **Upstash for Redis** (free tier is plenty) and connect it to the project. This auto-injects the `KV_REST_API_URL` / `KV_REST_API_TOKEN` env vars the endpoint reads.
+2. **Redeploy.** That's it — the home screen now shows the global board above your device-local one, and saved initials post to it automatically.
+
+Without the store (or on GitHub Pages / opening the file directly) the endpoint is simply absent and the game quietly falls back to the device-local board — nothing breaks. Scores are validated server-side (real 82-game records only), but there's no login, so treat it as a friendly arcade board, not a tamper-proof ranking.
+
 ## How it works
 
 1. **Spin the era + franchise.** Each round the slot machine rolls a random **decade and team** (e.g. `1990s · Bulls`, `2020s · Nuggets`). Draft **one** of the legends who played there.
