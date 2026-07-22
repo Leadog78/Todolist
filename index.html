@@ -198,6 +198,25 @@ html, body {
 .record-chip .rc-v { font-size: 20px; font-weight: 800; color: var(--gold); }
 .record-chip .rc-k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
 
+/* ===================== HIGH SCORES ===================== */
+.highscores { margin-top: 18px; width: 100%; max-width: 420px; margin-left: auto; margin-right: auto; }
+.hs-head { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.hs-board { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 6px 14px; text-align: left; }
+.hs-line { display: grid; grid-template-columns: 24px 1fr 62px 56px 30px; gap: 6px; padding: 6px 0; font-size: 14px; align-items: center; }
+.hs-line + .hs-line { border-top: 1px solid var(--line); }
+.hs-line.head { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.hs-line .hv { font-weight: 800; }
+.hs-line.first .hv, .hs-line.first .h-ini { color: var(--gold); }
+.hs-empty { color: var(--muted); font-size: 13px; text-align: center; padding: 8px 0; }
+.hs-entry { background: var(--panel); border: 1px solid var(--gold); border-radius: 12px; padding: 12px; margin-bottom: 16px; }
+.hs-title { font-weight: 800; color: var(--gold); margin-bottom: 8px; }
+.hs-row { display: flex; gap: 8px; justify-content: center; }
+.hs-input {
+  width: 96px; text-align: center; text-transform: uppercase; letter-spacing: 6px;
+  font-weight: 800; font-size: 18px; background: var(--bg2); border: 1px solid var(--line);
+  border-radius: 10px; color: var(--ink); padding: 10px; font-family: inherit;
+}
+
 /* ===================== PANELS (how / wild) ===================== */
 .panel {
   background: var(--panel);
@@ -224,7 +243,12 @@ html, body {
   border-radius: 10px;
   padding: 6px 10px;
   font-size: 13px;
+  color: var(--ink);
+  font-family: inherit;
+  cursor: pointer;
 }
+.token:not(:disabled):hover { border-color: var(--gold); }
+.token:disabled { opacity: 0.4; cursor: default; }
 .token b { color: var(--gold); }
 
 /* court */
@@ -536,6 +560,8 @@ html, body {
 
         <div class="records" id="home-records"></div>
 
+        <div class="highscores" id="highscores"></div>
+
         <button class="link-btn" id="btn-how">How to play</button>
       </div>
     </section>
@@ -563,8 +589,8 @@ html, body {
         <div class="draft-progress">
           <span id="pick-label">Pick 1 / 5</span>
           <div class="tokens">
-            <span class="token" id="token-reroll">🔄 <b id="reroll-count">3</b></span>
-            <span class="token" id="token-wild">⭐ <b id="wild-count">1</b></span>
+            <button type="button" class="token" id="token-reroll" title="Reroll team">🔄 <b id="reroll-count">3</b></button>
+            <button type="button" class="token" id="token-wild" title="Wildcard pick">⭐ <b id="wild-count">1</b></button>
           </div>
         </div>
       </header>
@@ -639,6 +665,16 @@ html, body {
           <summary>Chemistry breakdown</summary>
           <ul id="chem-list"></ul>
         </details>
+
+        <!-- High-score entry: shown only when the season makes the top 10 -->
+        <div class="hs-entry" id="hs-entry" hidden>
+          <div class="hs-title" id="hs-entry-title">🏅 Top-10 season! Enter your initials</div>
+          <div class="hs-row" id="hs-entry-row">
+            <input type="text" id="hs-initials" class="hs-input" maxlength="3" placeholder="AAA"
+                   autocomplete="off" autocapitalize="characters" spellcheck="false" />
+            <button type="button" class="btn btn-secondary" id="btn-hs-save">Save score</button>
+          </div>
+        </div>
 
         <div class="result-actions">
           <button class="btn btn-primary" id="btn-playoffs">🏆 Enter Playoffs</button>
@@ -1485,6 +1521,12 @@ function spinPool(state) {
   if (!combos.length) combos = all.filter((c) => c.candidates.length >= 3);
   if (!combos.length) combos = all;
 
+  // Never deal a team-era seen in the last few spins (unless nothing else
+  // is left) — legal repeats still feel like a broken slot machine.
+  const recent = state.recent || [];
+  const fresh = combos.filter((c) => !recent.includes(c.decade + "|" + c.team));
+  if (fresh.length) combos = fresh;
+
   // Group by decade; roll a decade (weighted by how stacked it is), then a
   // team within it (weighted toward deeper rosters).
   const byDecade = {};
@@ -1496,6 +1538,7 @@ function spinPool(state) {
   }));
   const group = pickWeighted(decadeGroups, comboWeight, state.rng);
   const chosen = pickWeighted(group.teamCombos, comboWeight, state.rng);
+  state.recent = [...recent.slice(-2), group.decade + "|" + chosen.team];
   return {
     decade: group.decade,
     team: chosen.team,
@@ -1772,6 +1815,48 @@ function simulatePlayoffs(result, seed, baseSeed) {
     } catch {}
   }
 
+  // -------- high-score board --------
+  // Top-10 seasons, ranked by wins, then longest win streak, then ring won.
+  const HS_MAX = 10;
+  function sortScores(a, b) {
+    return b.wins - a.wins || b.streak - a.streak || (b.ring ? 1 : 0) - (a.ring ? 1 : 0) || a.ts - b.ts;
+  }
+  function getScores(store) {
+    return Array.isArray(store.scores) ? store.scores.slice().sort(sortScores) : [];
+  }
+  function scoreQualifies(scores, wins, streak) {
+    if (scores.length < HS_MAX) return true;
+    const worst = scores[scores.length - 1];
+    return wins > worst.wins || (wins === worst.wins && streak > worst.streak);
+  }
+  function saveHighScore() {
+    if (!state || !state.result || state.scoreTs) return;
+    const ini =
+      $("hs-initials").value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3) || "AAA";
+    const r = state.result;
+    const store = loadStore();
+    const entry = {
+      ini,
+      wins: r.wins,
+      losses: r.losses,
+      streak: r.longestWin,
+      ring: !!(state.playoffs && state.playoffs.champion),
+      mode: state.mode,
+      ts: Date.now(),
+    };
+    const scores = getScores(store);
+    scores.push(entry);
+    scores.sort(sortScores);
+    store.scores = scores.slice(0, HS_MAX);
+    store.lastIni = ini;
+    saveStore(store);
+    const rank = store.scores.indexOf(entry) + 1;
+    state.scoreTs = rank > 0 ? entry.ts : null;
+    $("hs-entry-title").textContent =
+      rank > 0 ? `Saved — ${ini} is #${rank} on the board! 🏅` : "Saved!";
+    $("hs-entry-row").hidden = true;
+  }
+
   // -------- screen routing --------
   function show(id) {
     document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
@@ -1799,6 +1884,8 @@ function simulatePlayoffs(result, seed, baseSeed) {
       pick: 0,
       rerolls: 3,
       wild: 1,
+      recent: [], // last few dealt team-era keys, to stop repeats
+      scoreTs: null, // this season's high-score entry id, if saved
       current: null, // { decade, team, candidates }
       openPos: null, // currently expanded card index
       pro: !!$("pro-toggle").checked, // Pro Scout Mode hides stats
@@ -1903,10 +1990,11 @@ function simulatePlayoffs(result, seed, baseSeed) {
   }
 
   function renderTokens() {
+    const done = state.pick >= 5;
     $("reroll-count").textContent = state.rerolls;
     $("wild-count").textContent = state.wild;
-    $("btn-reroll").disabled = state.rerolls <= 0;
-    $("btn-wild").disabled = state.wild <= 0;
+    $("btn-reroll").disabled = $("token-reroll").disabled = done || state.rerolls <= 0;
+    $("btn-wild").disabled = $("token-wild").disabled = done || state.wild <= 0;
     $("pick-label").textContent = `Pick ${Math.min(state.pick + 1, 5)} / 5`;
   }
 
@@ -1964,7 +2052,7 @@ function simulatePlayoffs(result, seed, baseSeed) {
   function reroll() {
     if (state.rerolls <= 0 || state.pick >= 5) return;
     state.rerolls--;
-    state.current = spinTeam(state);
+    state.current = spinPool(state);
     renderDraft(true);
   }
 
@@ -2070,6 +2158,16 @@ function simulatePlayoffs(result, seed, baseSeed) {
     store.played = (store.played || 0) + 1;
     saveStore(store);
 
+    // High-score board — offer the initials entry if this season makes the cut.
+    state.scoreTs = null;
+    const qualifies = scoreQualifies(getScores(store), r.wins, r.longestWin);
+    $("hs-entry").hidden = !qualifies;
+    if (qualifies) {
+      $("hs-entry-title").textContent = "🏅 Top-10 season! Enter your initials";
+      $("hs-entry-row").hidden = false;
+      $("hs-initials").value = store.lastIni || "";
+    }
+
     $("grade-badge").className = "grade-badge " + r.grade.cls;
     $("grade-badge").textContent = r.grade.letter;
     $("result-record").textContent = `${r.wins}–${r.losses}`;
@@ -2159,6 +2257,7 @@ function simulatePlayoffs(result, seed, baseSeed) {
 
   // ====================== playoffs ======================
   function runPlayoffs() {
+    if (!state || !state.result || !state.seedNum) return;
     const r = state.result;
     const po = simulatePlayoffs(r, state.seedNum, state.seed);
     state.playoffs = po;
@@ -2206,6 +2305,14 @@ function simulatePlayoffs(result, seed, baseSeed) {
     if (po.champion) {
       store.titles = (store.titles || 0) + 1;
       if (state.result.wins === 82) store.rings820 = (store.rings820 || 0) + 1;
+      // If this season is already on the board, stamp the ring on its entry.
+      if (state.scoreTs && Array.isArray(store.scores)) {
+        const sc = store.scores.find((s) => s.ts === state.scoreTs);
+        if (sc) {
+          sc.ring = true;
+          store.scores.sort(sortScores);
+        }
+      }
     }
     saveStore(store);
 
@@ -2285,6 +2392,24 @@ function simulatePlayoffs(result, seed, baseSeed) {
       .join("");
     $("daily-label").textContent = `Today · ${todayKey()}`;
     $("pro-toggle").checked = !!store.proMode;
+
+    // High-score board
+    const scores = getScores(store);
+    $("highscores").innerHTML =
+      `<div class="hs-head">🏅 High Scores</div>` +
+      `<div class="hs-board">` +
+      `<div class="hs-line head"><span>#</span><span>Player</span><span>Record</span><span>Streak</span><span>Ring</span></div>` +
+      (scores.length
+        ? scores
+            .map(
+              (s, i) =>
+                `<div class="hs-line${i === 0 ? " first" : ""}"><span>${i + 1}</span>` +
+                `<span class="h-ini">${s.ini}</span><span class="hv">${s.wins}–${s.losses}</span>` +
+                `<span>${s.streak}W</span><span>${s.ring ? "💍" : "—"}</span></div>`
+            )
+            .join("")
+        : `<div class="hs-empty">No scores yet — sim a season to claim the board.</div>`) +
+      `</div>`;
   }
 
   // ====================== wiring ======================
@@ -2300,6 +2425,12 @@ function simulatePlayoffs(result, seed, baseSeed) {
   $("btn-quit").addEventListener("click", () => { renderHome(); show("screen-home"); });
   $("btn-reroll").addEventListener("click", reroll);
   $("btn-wild").addEventListener("click", openWild);
+  $("token-reroll").addEventListener("click", reroll);
+  $("token-wild").addEventListener("click", openWild);
+  $("btn-hs-save").addEventListener("click", saveHighScore);
+  $("hs-initials").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") saveHighScore();
+  });
   $("btn-wild-cancel").addEventListener("click", () => show("screen-draft"));
   $("wild-search").addEventListener("input", (e) => renderWildList(e.target.value));
   $("btn-sim").addEventListener("click", runSimulation);
