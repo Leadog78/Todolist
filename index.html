@@ -217,6 +217,7 @@ html, body {
   font-weight: 800; font-size: 18px; background: var(--bg2); border: 1px solid var(--line);
   border-radius: 10px; color: var(--ink); padding: 10px; font-family: inherit;
 }
+.version { color: var(--muted); font-size: 11px; margin-top: 12px; opacity: 0.7; }
 
 /* ===================== PANELS (how / wild) ===================== */
 .panel {
@@ -564,6 +565,7 @@ html, body {
         <div class="highscores" id="highscores"></div>
 
         <button class="link-btn" id="btn-how">How to play</button>
+        <p class="version">v1.4</p>
       </div>
     </section>
 
@@ -1932,7 +1934,7 @@ function simulatePlayoffs(result, seed, baseSeed) {
     if (state.mode !== "daily") {
       const s = loadStore();
       const key = state.current.decade + "|" + state.current.team;
-      s.recentDeals = [...(s.recentDeals || []).filter((k) => k !== key), key].slice(-24);
+      s.recentDeals = [...(s.recentDeals || []).filter((k) => k !== key), key].slice(-40);
       saveStore(s);
     }
   }
