@@ -12,6 +12,20 @@ A fast, polished, fully self-contained web game inspired by [82-0.com](https://w
 
 > Downloaded the repo as a ZIP? You don't even need to unzip everything — `index.html` is fully standalone. (To serve it instead: `python3 -m http.server 8000`.)
 
+### Play online
+
+The game is live on **GitHub Pages**: <https://leadog78.github.io/Todolist/> (auto-republishes on every push to `main`).
+
+### Deploy to Vercel
+
+The repo is Vercel-ready (`vercel.json` marks it as a plain static site — no framework, no build step):
+
+1. Go to [vercel.com/new](https://vercel.com/new) and **Import** this GitHub repo.
+2. Leave every setting as detected — Framework Preset: **Other**, no Build Command, no Output Directory.
+3. Click **Deploy**. Done — you'll get a `*.vercel.app` URL, and every push to `main` redeploys automatically.
+
+Or from the CLI: `npx vercel --prod` from the repo root.
+
 ## How it works
 
 1. **Spin the era + franchise.** Each round the slot machine rolls a random **decade and team** (e.g. `1990s · Bulls`, `2020s · Nuggets`). Draft **one** of the legends who played there.
