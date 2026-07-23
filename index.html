@@ -565,7 +565,7 @@ html, body {
         <div class="highscores" id="highscores"></div>
 
         <button class="link-btn" id="btn-how">How to play</button>
-        <p class="version">v1.6</p>
+        <p class="version">v1.7</p>
       </div>
     </section>
 
@@ -1816,7 +1816,11 @@ function simulatePlayoffs(result, seed, baseSeed) {
   // Backed by /api/scores when the game is hosted on Vercel with a Redis
   // store attached (see README). Anywhere else (GitHub Pages, a local file)
   // the fetch fails silently and only the device-local board is shown.
-  const API_BASE = "";
+  // On GitHub Pages (no serverless functions) the board lives on the Vercel
+  // deployment — point at it cross-origin; the API sends open CORS headers.
+  const API_BASE = location.hostname.endsWith("github.io")
+    ? "https://todolist-theta-pink-34.vercel.app"
+    : "";
   let globalScores = null; // null = unavailable; [] = reachable but empty
   let globalStatus = null; // "unconfigured" = API answered 503 (no Redis store yet)
   function fetchGlobalScores() {
@@ -2514,6 +2518,15 @@ function simulatePlayoffs(result, seed, baseSeed) {
   $("btn-po-home").addEventListener("click", () => { renderHome(); show("screen-home"); });
 
   renderHome();
+
+  // Vercel Web Analytics — the loader only exists when served from Vercel,
+  // so inject it there and skip it on GitHub Pages / local files.
+  if (/\.vercel\.app$/.test(location.hostname)) {
+    const s = document.createElement("script");
+    s.defer = true;
+    s.src = "/_vercel/insights/script.js";
+    document.head.appendChild(s);
+  }
 })();
 
 </script>
