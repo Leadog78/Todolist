@@ -565,7 +565,7 @@ html, body {
         <div class="highscores" id="highscores"></div>
 
         <button class="link-btn" id="btn-how">How to play</button>
-        <p class="version">v1.5</p>
+        <p class="version">v1.6</p>
       </div>
     </section>
 
@@ -2474,7 +2474,7 @@ function simulatePlayoffs(result, seed, baseSeed) {
     else if (globalStatus === "unconfigured")
       html +=
         `<div class="hs-head">🌍 Global Top 10</div>` +
-        `<div class="hs-board"><div class="hs-empty">Not connected yet — add the free Upstash Redis store to this Vercel project and redeploy (see README).</div></div>`;
+        `<div class="hs-board"><div class="hs-empty">Not connected yet — in Vercel: Storage → your Redis database → Connect to Project, then Redeploy (see README).</div></div>`;
     html += boardHTML(
       globalScores ? "📱 This device" : "🏅 High Scores",
       local,
