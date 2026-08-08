@@ -200,6 +200,22 @@ html, body {
 
 /* ===================== HIGH SCORES ===================== */
 .highscores { margin-top: 18px; width: 100%; max-width: 420px; margin-left: auto; margin-right: auto; }
+.hs-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.hs-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 8px 6px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.hs-tab.active { border-color: var(--gold); color: var(--gold); background: var(--panel2); }
 .hs-head { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
 .hs-board { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 6px 14px; text-align: left; }
 .hs-board + .hs-head { margin-top: 16px; }
@@ -252,6 +268,18 @@ html, body {
 .token:not(:disabled):hover { border-color: var(--gold); }
 .token:disabled { opacity: 0.4; cursor: default; }
 .token b { color: var(--gold); }
+
+/* cap mode: remaining budget chip in the draft header */
+.budget-hud {
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.budget-hud b { color: var(--gold); }
 
 /* court */
 .court {
@@ -337,6 +365,21 @@ html, body {
   border-radius: 6px;
   padding: 2px 6px;
 }
+.pcost {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--gold);
+  white-space: nowrap;
+}
+/* over-budget card: dim everything except the price, which flips red */
+.pcard.too-rich .pcard-name, .pcard.too-rich .pcard-meta,
+.pcard.too-rich .pos-pill, .pcard.too-rich .ratings,
+.pcard.too-rich .scout-note { opacity: 0.45; }
+.pcard.too-rich .pcost { color: var(--bad); border-color: var(--bad); }
 .ratings { display: flex; gap: 6px; margin-top: 8px; }
 .rbar { flex: 1; text-align: center; }
 .rbar .rk { font-size: 9px; color: var(--muted); }
@@ -437,6 +480,7 @@ html, body {
 .grade-badge.d, .grade-badge.f { color: var(--bad); border-color: var(--bad); }
 .result-record { font-size: 40px; font-weight: 900; }
 .result-title { color: var(--muted); margin-bottom: 18px; font-weight: 600; }
+.result-cap { color: var(--gold); font-weight: 700; margin-bottom: 10px; }
 
 .result-lineup { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 18px; }
 .rl-slot { background: var(--panel); border-radius: 8px; padding: 8px 4px; border: 1px solid var(--line); }
@@ -541,13 +585,13 @@ html, body {
         <p class="tagline">Draft five legends. Build chemistry. Chase the impossible&nbsp;<b>82–0</b>.</p>
 
         <div class="mode-buttons">
-          <button class="btn btn-primary" id="btn-daily">
-            <span class="btn-title">Daily Challenge</span>
-            <span class="btn-sub" id="daily-label">Everyone drafts the same teams today</span>
-          </button>
-          <button class="btn btn-secondary" id="btn-endless">
+          <button class="btn btn-primary" id="btn-endless">
             <span class="btn-title">Endless Mode</span>
             <span class="btn-sub">Fresh random draft, play forever</span>
+          </button>
+          <button class="btn btn-secondary" id="btn-cap">
+            <span class="btn-title">💰 Salary Cap Mode</span>
+            <span class="btn-sub">Five players, a $100M cap — spend it wisely</span>
           </button>
         </div>
 
@@ -565,7 +609,7 @@ html, body {
         <div class="highscores" id="highscores"></div>
 
         <button class="link-btn" id="btn-how">How to play</button>
-        <p class="version">v1.7</p>
+        <p class="version">v2.0</p>
       </div>
     </section>
 
@@ -591,6 +635,7 @@ html, body {
         <button class="icon-btn" id="btn-quit" title="Quit to menu">✕</button>
         <div class="draft-progress">
           <span id="pick-label">Pick 1 / 5</span>
+          <span id="budget-hud" class="budget-hud" hidden></span>
           <div class="tokens">
             <button type="button" class="token" id="token-reroll" title="Reroll team">🔄 <b id="reroll-count">3</b></button>
             <button type="button" class="token" id="token-wild" title="Wildcard pick">⭐ <b id="wild-count">1</b></button>
@@ -647,6 +692,7 @@ html, body {
         <div class="grade-badge" id="grade-badge"></div>
         <div class="result-record" id="result-record"></div>
         <div class="result-title" id="result-title"></div>
+        <div id="result-cap" class="result-cap" hidden></div>
 
         <div class="result-lineup" id="result-lineup"></div>
 
@@ -1858,8 +1904,7 @@ const DECADES = [...new Set(PLAYERS.map((p) => p.d))].sort();
  * ==========================================================================*/
 
 /* ---- Seeded RNG (mulberry32) ----------------------------------------------
- * Deterministic so the Daily Challenge is identical for everyone on a date,
- * and so a finished season can be re-simulated/shared reliably. */
+ * Deterministic so a finished season can be re-simulated/shared reliably. */
 function makeRNG(seed) {
   let a = seed >>> 0;
   return function () {
@@ -1889,6 +1934,21 @@ function shuffle(arr, rng) {
   return a;
 }
 
+/* ---- Salary cap -----------------------------------------------------------
+ * Cap mode prices each legend off a weighted rating blend; superstars eat
+ * most of a $100M budget while role players stay near the $1M minimum. */
+function playerValue(p) {
+  return p.o * 0.34 + p.df * 0.22 + p.pm * 0.16 + p.rb * 0.12 + p.sh * 0.16;
+}
+function playerCost(p) {
+  const v = playerValue(p);
+  // Steep superstar premium: two elite stars nearly exhaust the $100M cap,
+  // so winning rosters are built, not stacked. Tuned by simulation: legends
+  // ~$35-42M, all-stars ~$25-32M, starters ~$12-22M, role players $1-8M.
+  return Math.max(1, Math.round(1 + Math.pow(Math.max(0, v - 50) / 40, 2.7) * 41)); // $M
+}
+const SALARY_CAP = 100;
+
 /* ---- Spin: roll a random era + franchise and offer that roster ------------
  * Every eligible team-era is equally likely (uniform pick — no weighting),
  * and a team-era already dealt earlier in the same game is never dealt
@@ -1915,6 +1975,15 @@ function spinPool(state) {
   if (!combos.length) combos = all.filter((c) => c.candidates.length >= 5);
   if (!combos.length) combos = all.filter((c) => c.candidates.length >= 3);
   if (!combos.length) combos = all;
+
+  // Cap mode: prefer team-eras with at least one candidate the remaining
+  // budget can afford ($1M reserved per other open slot). Fall back to
+  // unfiltered rather than deadlock the draft.
+  if (state.mode === "cap") {
+    const budget = SALARY_CAP - state.spent - (5 - state.pick - 1) * 1;
+    const affordable = combos.filter((c) => c.candidates.some((p) => playerCost(p) <= budget));
+    if (affordable.length) combos = affordable;
+  }
 
   // Never deal a team-era already dealt this game, and (endless mode) avoid
   // ones dealt in the last few games too — repeats feel like a broken slot
@@ -2211,8 +2280,11 @@ function simulatePlayoffs(result, seed, baseSeed) {
   function sortScores(a, b) {
     return b.wins - a.wins || b.streak - a.streak || (b.ring ? 1 : 0) - (a.ring ? 1 : 0) || a.ts - b.ts;
   }
-  function getScores(store) {
-    return Array.isArray(store.scores) ? store.scores.slice().sort(sortScores) : [];
+  // Two device-local boards: classic (endless) runs in store.scores, Salary
+  // Cap runs in store.scoresCap. board is "cap" | "classic".
+  function getScores(store, board) {
+    const list = board === "cap" ? store.scoresCap : store.scores;
+    return Array.isArray(list) ? list.slice().sort(sortScores) : [];
   }
   function scoreQualifies(scores, wins, streak) {
     if (scores.length < HS_MAX) return true;
@@ -2229,40 +2301,45 @@ function simulatePlayoffs(result, seed, baseSeed) {
   const API_BASE = location.hostname.endsWith("github.io")
     ? "https://todolist-theta-pink-34.vercel.app"
     : "";
-  let globalScores = null; // null = unavailable; [] = reachable but empty
+  // Per-board global state: null = unknown/unavailable; [] = live but empty.
+  const globalScores = { classic: null, cap: null };
   let globalStatus = null; // "unconfigured" = API answered 503 (no Redis store yet)
+  function fetchGlobalBoard(board) {
+    fetch(API_BASE + "/api/scores" + (board === "cap" ? "?board=cap" : ""), { cache: "no-store" })
+      .then((r) => {
+        if (r.status === 503) {
+          globalStatus = "unconfigured";
+          renderBoards();
+          return null;
+        }
+        return r.ok ? r.json() : null;
+      })
+      .then((data) => {
+        if (data && Array.isArray(data.scores)) {
+          globalScores[board] = data.scores;
+          globalStatus = "ok";
+          renderBoards();
+        }
+      })
+      .catch(() => {});
+  }
   function fetchGlobalScores() {
     try {
-      fetch(API_BASE + "/api/scores", { cache: "no-store" })
-        .then((r) => {
-          if (r.status === 503) {
-            globalStatus = "unconfigured";
-            renderBoards();
-            return null;
-          }
-          return r.ok ? r.json() : null;
-        })
-        .then((data) => {
-          if (data && Array.isArray(data.scores)) {
-            globalScores = data.scores;
-            globalStatus = "ok";
-            renderBoards();
-          }
-        })
-        .catch(() => {});
+      fetchGlobalBoard("classic");
+      fetchGlobalBoard("cap");
     } catch {}
   }
-  function submitGlobalScore(entry) {
+  function submitGlobalScore(entry, board) {
     try {
       fetch(API_BASE + "/api/scores", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(entry),
+        body: JSON.stringify(Object.assign({}, entry, { board })),
       })
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
           if (data && Array.isArray(data.scores)) {
-            globalScores = data.scores;
+            globalScores[board] = data.scores;
             renderBoards();
           }
         })
@@ -2284,14 +2361,17 @@ function simulatePlayoffs(result, seed, baseSeed) {
       mode: state.mode,
       ts: Date.now(),
     };
-    const scores = getScores(store);
+    const board = state.mode === "cap" ? "cap" : "classic";
+    const scores = getScores(store, board);
     scores.push(entry);
     scores.sort(sortScores);
-    store.scores = scores.slice(0, HS_MAX);
+    const kept = scores.slice(0, HS_MAX);
+    if (board === "cap") store.scoresCap = kept;
+    else store.scores = kept;
     store.lastIni = ini;
     saveStore(store);
-    submitGlobalScore(entry);
-    const rank = store.scores.indexOf(entry) + 1;
+    submitGlobalScore(entry, board);
+    const rank = kept.indexOf(entry) + 1;
     state.scoreTs = rank > 0 ? entry.ts : null;
     $("hs-entry-title").textContent =
       rank > 0 ? `Saved — ${ini} is #${rank} on the board! 🏅` : "Saved!";
@@ -2304,20 +2384,14 @@ function simulatePlayoffs(result, seed, baseSeed) {
     $(id).classList.add("active");
   }
 
-  function todayKey() {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  }
-
   // ====================== game state ======================
   let state = null;
 
   function newGame(mode) {
-    const isDaily = mode === "daily";
-    const seedStr = isDaily ? "daily:" + todayKey() : "endless:" + Date.now() + ":" + Math.random();
+    const seedStr = mode + ":" + Date.now() + ":" + Math.random();
     const seed = hashString(seedStr);
     state = {
-      mode,
+      mode, // "endless" | "cap"
       seedStr,
       seed,
       rng: makeRNG(seed),
@@ -2326,33 +2400,40 @@ function simulatePlayoffs(result, seed, baseSeed) {
       rerolls: 3,
       wild: 1,
       recent: [], // every team-era key dealt this game — never repeated
-      // Endless mode also avoids team-eras dealt in recent games (persisted);
-      // daily must stay identical for everyone, so it ignores that history.
-      blocklist: isDaily ? [] : loadStore().recentDeals || [],
+      // Also avoid team-eras dealt in recent games (persisted history).
+      blocklist: loadStore().recentDeals || [],
       scoreTs: null, // this season's high-score entry id, if saved
       current: null, // { decade, team, candidates }
       openPos: null, // currently expanded card index
       pro: !!$("pro-toggle").checked, // Pro Scout Mode hides stats
     };
+    if (mode === "cap") state.spent = 0;
     dealNext();
     renderDraft(true);
     show("screen-draft");
   }
 
-  // Spin, and (endless mode) remember the deal across games so the same
-  // team-era can't come up again for roughly three full drafts.
+  // Spin, and remember the deal across games so the same team-era can't
+  // come up again for roughly three full drafts.
   function dealNext() {
     state.current = spinPool(state);
-    if (state.mode !== "daily") {
-      const s = loadStore();
-      const key = state.current.decade + "|" + state.current.team;
-      s.recentDeals = [...(s.recentDeals || []).filter((k) => k !== key), key].slice(-40);
-      saveStore(s);
-    }
+    const s = loadStore();
+    const key = state.current.decade + "|" + state.current.team;
+    s.recentDeals = [...(s.recentDeals || []).filter((k) => k !== key), key].slice(-40);
+    saveStore(s);
   }
 
   function openSlots() {
     return POSITIONS.map((p, i) => (state.roster[i] ? null : i)).filter((i) => i !== null);
+  }
+
+  // Cap mode budget: what's left, and the most a single pick can cost after
+  // reserving the $1M minimum for every other open slot.
+  function capLeft() {
+    return SALARY_CAP - state.spent;
+  }
+  function maxAffordable() {
+    return capLeft() - (openSlots().length - 1) * 1;
   }
 
   // ====================== draft rendering ======================
@@ -2385,6 +2466,9 @@ function simulatePlayoffs(result, seed, baseSeed) {
     const open = openSlots();
     const card = document.createElement("div");
     card.className = "pcard";
+    const cap = state.mode === "cap";
+    const tooRich = cap && playerCost(player) > maxAffordable();
+    if (tooRich) card.classList.add("too-rich");
     // Pro Scout Mode: hide ratings AND the archetype — you draft on
     // name, team, era, position and listed height alone.
     const meta = state.pro
@@ -2405,7 +2489,7 @@ function simulatePlayoffs(result, seed, baseSeed) {
           <div class="pcard-name">${player.n}</div>
           <div class="pcard-meta">${meta}</div>
         </div>
-        <div class="pcard-pos">${player.p.map((p) => `<span class="pos-pill">${p}</span>`).join("")}</div>
+        <div class="pcard-pos">${player.p.map((p) => `<span class="pos-pill">${p}</span>`).join("")}${cap ? `<span class="pcost">$${playerCost(player)}M</span>` : ""}</div>
       </div>
       ${body}
       <div class="pos-choose">
@@ -2452,6 +2536,9 @@ function simulatePlayoffs(result, seed, baseSeed) {
     $("btn-reroll").disabled = $("token-reroll").disabled = done || state.rerolls <= 0;
     $("btn-wild").disabled = $("token-wild").disabled = done || state.wild <= 0;
     $("pick-label").textContent = `Pick ${Math.min(state.pick + 1, 5)} / 5`;
+    const hud = $("budget-hud");
+    hud.hidden = state.mode !== "cap";
+    if (state.mode === "cap") hud.innerHTML = `💰 <b>$${capLeft()}M</b> left`;
   }
 
   function renderDraft(animate) {
@@ -2459,7 +2546,7 @@ function simulatePlayoffs(result, seed, baseSeed) {
     renderTokens();
     $("btn-sim").disabled = state.pick < 5;
     $("spinner-label").textContent =
-      state.mode === "daily" ? "DAILY DRAFT · SAME FOR EVERYONE TODAY" : "NOW DRAFTING";
+      state.mode === "cap" ? "SALARY CAP DRAFT" : "NOW DRAFTING";
     const label = `${state.current.decade} · ${state.current.team}`;
     if (animate) {
       animateSpin(() => {
@@ -2491,6 +2578,11 @@ function simulatePlayoffs(result, seed, baseSeed) {
 
   // ====================== draft actions ======================
   function draftPlayer(player, posIdx) {
+    if (state.mode === "cap") {
+      const cost = playerCost(player);
+      if (cost > maxAffordable()) return; // can't fit under the cap
+      state.spent += cost;
+    }
     state.roster[posIdx] = { player, pos: POSITIONS[posIdx] };
     state.pick++;
     if (state.pick >= 5) {
@@ -2543,6 +2635,8 @@ function simulatePlayoffs(result, seed, baseSeed) {
         btn.addEventListener("click", () => {
           const idx = parseInt(btn.dataset.pos, 10);
           if (state.roster[idx]) return;
+          // Don't burn the token on a pick draftPlayer would refuse.
+          if (state.mode === "cap" && playerCost(player) > maxAffordable()) return;
           state.wild--;
           draftPlayer(player, idx);
           show("screen-draft");
@@ -2618,10 +2712,14 @@ function simulatePlayoffs(result, seed, baseSeed) {
 
     // High-score board — offer the initials entry if this season makes the cut.
     state.scoreTs = null;
-    const qualifies = scoreQualifies(getScores(store), r.wins, r.longestWin);
+    const board = state.mode === "cap" ? "cap" : "classic";
+    const qualifies = scoreQualifies(getScores(store, board), r.wins, r.longestWin);
     $("hs-entry").hidden = !qualifies;
     if (qualifies) {
-      $("hs-entry-title").textContent = "🏅 Top-10 season! Enter your initials";
+      $("hs-entry-title").textContent =
+        board === "cap"
+          ? "🏅 Top-10 salary-cap season! Enter your initials"
+          : "🏅 Top-10 season! Enter your initials";
       $("hs-entry-row").hidden = false;
       $("hs-initials").value = store.lastIni || "";
     }
@@ -2630,6 +2728,13 @@ function simulatePlayoffs(result, seed, baseSeed) {
     $("grade-badge").textContent = r.grade.letter;
     $("result-record").textContent = `${r.wins}–${r.losses}`;
     $("result-title").textContent = r.grade.title;
+    const capLine = $("result-cap");
+    if (state.mode === "cap") {
+      capLine.textContent = `Cap used: $${state.spent}M / $${SALARY_CAP}M`;
+      capLine.hidden = false;
+    } else {
+      capLine.hidden = true;
+    }
 
     // lineup with fit emoji
     const lu = $("result-lineup");
@@ -2763,13 +2868,15 @@ function simulatePlayoffs(result, seed, baseSeed) {
     if (po.champion) {
       store.titles = (store.titles || 0) + 1;
       if (state.result.wins === 82) store.rings820 = (store.rings820 || 0) + 1;
-      // If this season is already on the board, stamp the ring on its entry.
-      if (state.scoreTs && Array.isArray(store.scores)) {
-        const sc = store.scores.find((s) => s.ts === state.scoreTs);
+      // If this season is already on its board, stamp the ring on its entry.
+      const board = state.mode === "cap" ? "cap" : "classic";
+      const list = board === "cap" ? store.scoresCap : store.scores;
+      if (state.scoreTs && Array.isArray(list)) {
+        const sc = list.find((s) => s.ts === state.scoreTs);
         if (sc) {
           sc.ring = true;
-          store.scores.sort(sortScores);
-          submitGlobalScore(sc);
+          list.sort(sortScores);
+          submitGlobalScore(sc, board);
         }
       }
     }
@@ -2791,7 +2898,7 @@ function simulatePlayoffs(result, seed, baseSeed) {
   function buildShareText() {
     const r = state.result;
     const fits = POSITIONS.map((pos, i) => fitEmoji(adjustedPlayer(state.roster[i]).fit)).join("");
-    const tag = state.mode === "daily" ? `Daily ${todayKey()}` : "Endless";
+    const tag = state.mode === "cap" ? "Salary Cap" : "Endless";
     let line =
       `🏀 PERFECT SEASON — ${tag}\n` +
       `${r.wins}–${r.losses}  ·  Grade ${r.grade.letter} (${r.grade.title})\n` +
@@ -2849,7 +2956,6 @@ function simulatePlayoffs(result, seed, baseSeed) {
     $("home-records").innerHTML = chips
       .map((c) => `<div class="record-chip"><div class="rc-v">${c[1]}</div><div class="rc-k">${c[0]}</div></div>`)
       .join("");
-    $("daily-label").textContent = `Today · ${todayKey()} · same draft for everyone`;
     $("pro-toggle").checked = !!store.proMode;
 
     renderBoards();
@@ -2879,25 +2985,49 @@ function simulatePlayoffs(result, seed, baseSeed) {
   }
 
   function renderBoards() {
-    const local = getScores(loadStore());
-    let html = "";
-    if (globalScores)
-      html += boardHTML("🌍 Global Top 10", globalScores.slice(0, HS_MAX), "No global scores yet — be the first!");
+    const store = loadStore();
+    const tab = store.boardTab === "cap" ? "cap" : "classic";
+    const local = getScores(store, tab);
+    const capEmpty = "No cap-mode scores yet — be the first!";
+    const tabBtn = (id, label, on) =>
+      `<button type="button" id="${id}" class="hs-tab${on ? " active" : ""}">${label}</button>`;
+    let html =
+      `<div class="hs-tabs">` +
+      tabBtn("hs-tab-classic", "🏀 Classic", tab === "classic") +
+      tabBtn("hs-tab-cap", "💰 Salary Cap", tab === "cap") +
+      `</div>`;
+    const global = globalScores[tab];
+    if (global)
+      html += boardHTML(
+        "🌍 Global Top 10",
+        global.slice(0, HS_MAX),
+        tab === "cap" ? capEmpty : "No global scores yet — be the first!"
+      );
     else if (globalStatus === "unconfigured")
       html +=
         `<div class="hs-head">🌍 Global Top 10</div>` +
         `<div class="hs-board"><div class="hs-empty">Not connected yet — in Vercel: Storage → your Redis database → Connect to Project, then Redeploy (see README).</div></div>`;
     html += boardHTML(
-      globalScores ? "📱 This device" : "🏅 High Scores",
+      global ? "📱 This device" : "🏅 High Scores",
       local,
-      "No scores yet — sim a season to claim the board."
+      tab === "cap" ? capEmpty : "No scores yet — sim a season to claim the board."
     );
     $("highscores").innerHTML = html;
   }
 
   // ====================== wiring ======================
-  $("btn-daily").addEventListener("click", () => newGame("daily"));
+  // Board tabs are re-created by renderBoards' innerHTML, so delegate the
+  // clicks from the stable container. No refetch — just re-render.
+  $("highscores").addEventListener("click", (e) => {
+    const btn = e.target && e.target.closest ? e.target.closest(".hs-tab") : null;
+    if (!btn) return;
+    const s = loadStore();
+    s.boardTab = btn.id === "hs-tab-cap" ? "cap" : "classic";
+    saveStore(s);
+    renderBoards();
+  });
   $("btn-endless").addEventListener("click", () => newGame("endless"));
+  $("btn-cap").addEventListener("click", () => newGame("cap"));
   $("pro-toggle").addEventListener("change", (e) => {
     const s = loadStore();
     s.proMode = e.target.checked;

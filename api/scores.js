@@ -12,8 +12,15 @@
 import net from "node:net";
 import tls from "node:tls";
 
-const KEY = "perfectSeason:scores";
+const KEY_CLASSIC = "perfectSeason:scores";
+const KEY_CAP = "perfectSeason:scores:cap";
 const MAX_KEEP = 50; // stored entries; responses return the top 10
+
+// Two boards: the classic (endless) ladder keeps its original key, the
+// Salary Cap ladder lives under its own key. Anything but "cap" is classic.
+function boardKey(board) {
+  return board === "cap" ? KEY_CAP : KEY_CLASSIC;
+}
 
 function backend() {
   if (process.env.REDIS_URL) return { type: "url", url: process.env.REDIS_URL };
@@ -107,12 +114,12 @@ function redisUrlCommands(rawUrl, commands) {
 }
 
 /* ---- unified storage ---------------------------------------------------- */
-async function storeGet(be) {
+async function storeGet(be, key) {
   let raw;
   if (be.type === "url") {
-    [raw] = await redisUrlCommands(be.url, [["GET", KEY]]);
+    [raw] = await redisUrlCommands(be.url, [["GET", key]]);
   } else {
-    const r = await fetch(`${be.url}/get/${KEY}`, {
+    const r = await fetch(`${be.url}/get/${key}`, {
       headers: { Authorization: `Bearer ${be.token}` },
     });
     if (!r.ok) throw new Error(`redis get ${r.status}`);
@@ -126,12 +133,12 @@ async function storeGet(be) {
   }
 }
 
-async function storeSet(be, value) {
+async function storeSet(be, key, value) {
   if (be.type === "url") {
-    await redisUrlCommands(be.url, [["SET", KEY, JSON.stringify(value)]]);
+    await redisUrlCommands(be.url, [["SET", key, JSON.stringify(value)]]);
     return;
   }
-  const r = await fetch(`${be.url}/set/${KEY}`, {
+  const r = await fetch(`${be.url}/set/${key}`, {
     method: "POST",
     headers: { Authorization: `Bearer ${be.token}` },
     body: JSON.stringify(value),
@@ -170,7 +177,7 @@ function sanitize(body) {
     losses,
     streak,
     ring: body.ring === true,
-    mode: body.mode === "daily" ? "daily" : "endless",
+    mode: body.mode === "cap" ? "cap" : "endless",
     ts: Number.isFinite(ts) && ts > 0 ? ts : Date.now(),
   };
 }
@@ -186,21 +193,27 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === "GET") {
-      const scores = (await storeGet(be)).sort(sortScores);
+      // Vercel populates req.query; fall back to parsing the raw URL when a
+      // barer runtime hands us only req.url.
+      const query =
+        req.query || Object.fromEntries(new URL(req.url || "/", "http://x").searchParams);
+      const key = boardKey(query.board);
+      const scores = (await storeGet(be, key)).sort(sortScores);
       return res.status(200).json({ scores: scores.slice(0, 10) });
     }
 
     if (req.method === "POST") {
+      const key = boardKey((req.body || {}).board);
       const entry = sanitize(req.body || {});
       if (!entry) return res.status(400).json({ error: "Invalid score" });
-      const scores = await storeGet(be);
+      const scores = await storeGet(be, key);
       // (ini, ts) identifies a season — a resubmit (ring upgrade) replaces it.
       const i = scores.findIndex((s) => s.ts === entry.ts && s.ini === entry.ini);
       if (i >= 0) scores[i] = entry;
       else scores.push(entry);
       scores.sort(sortScores);
       const kept = scores.slice(0, MAX_KEEP);
-      await storeSet(be, kept);
+      await storeSet(be, key, kept);
       return res.status(200).json({ scores: kept.slice(0, 10) });
     }
 
