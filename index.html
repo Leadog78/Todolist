@@ -29,16 +29,26 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-html, body {
+html { height: 100%; }
+body {
   margin: 0;
-  height: 100%;
-  background:
-    radial-gradient(1200px 600px at 50% -10%, #1d2147 0%, transparent 60%),
-    radial-gradient(900px 500px at 100% 110%, #20183a 0%, transparent 55%),
-    var(--bg);
+  min-height: 100%;
+  background: var(--bg);
   color: var(--ink);
   font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+/* Ambient glows live on a fixed layer so no gradient edge can ever appear,
+ * no matter how tall the page scrolls. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #1d2147 0%, transparent 60%),
+    radial-gradient(900px 500px at 100% 110%, #20183a 0%, transparent 55%);
 }
 
 #app {
@@ -74,6 +84,12 @@ html, body {
 }
 .btn:active { transform: scale(0.97); }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary:disabled {
+  opacity: 1;
+  background: var(--panel2);
+  color: var(--muted);
+  box-shadow: none;
+}
 .btn-primary {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   color: #1a1100;
@@ -89,15 +105,17 @@ html, body {
 }
 .btn-token:disabled { opacity: 0.35; }
 .link-btn {
-  background: none;
-  border: none;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 16px;
   color: var(--muted);
-  text-decoration: underline;
   cursor: pointer;
   font-size: 14px;
   margin-top: 18px;
   font-family: inherit;
 }
+.link-btn:hover { color: var(--ink); border-color: var(--gold); }
 .icon-btn {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -128,7 +146,7 @@ html, body {
 .tagline { color: var(--muted); font-size: 15px; margin: 8px 0 34px; line-height: 1.5; }
 .mode-buttons { display: flex; flex-direction: column; gap: 14px; }
 .mode-buttons .btn { display: flex; flex-direction: column; gap: 3px; text-align: left; }
-.btn-title { font-size: 18px; }
+.btn-title { font-size: 18px; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); }
 .btn-sub { font-size: 12px; font-weight: 500; opacity: 0.8; }
 /* Pro Scout Mode toggle */
 .pro-toggle {
@@ -183,20 +201,21 @@ html, body {
 
 .records {
   margin-top: 26px;
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (max-width: 430px) {
+  .records { grid-template-columns: repeat(2, 1fr); }
 }
 .record-chip {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 12px;
-  padding: 10px 14px;
-  min-width: 92px;
+  padding: 10px 8px;
 }
 .record-chip .rc-v { font-size: 20px; font-weight: 800; color: var(--gold); }
-.record-chip .rc-k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.record-chip .rc-k { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
 
 /* ===================== HIGH SCORES ===================== */
 .highscores { margin-top: 18px; width: 100%; max-width: 420px; margin-left: auto; margin-right: auto; }
@@ -215,13 +234,17 @@ html, body {
   white-space: nowrap;
   cursor: pointer;
 }
-.hs-tab.active { border-color: var(--gold); color: var(--gold); background: var(--panel2); }
+.hs-tab:not(.active) { filter: saturate(0.4); opacity: 0.7; }
+.hs-tab.active { border-color: var(--gold); color: var(--gold); background: rgba(255, 210, 74, 0.12); }
 .hs-head { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
 .hs-board { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 6px 14px; text-align: left; }
 .hs-board + .hs-head { margin-top: 16px; }
-.hs-line { display: grid; grid-template-columns: 24px 1fr 62px 56px 30px; gap: 6px; padding: 6px 0; font-size: 14px; align-items: center; }
+.hs-line { display: grid; grid-template-columns: 24px 1fr 62px 56px 34px; gap: 6px; padding: 6px 0; font-size: 14px; align-items: center; }
+.hs-line > :nth-child(3), .hs-line > :nth-child(4) { text-align: right; font-variant-numeric: tabular-nums; }
+.hs-line > :nth-child(5) { text-align: center; }
+.hs-line:not(.head) > :nth-child(5) { font-size: 17px; line-height: 1; }
 .hs-line + .hs-line { border-top: 1px solid var(--line); }
-.hs-line.head { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.hs-line.head { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
 .hs-line .hv { font-weight: 800; }
 .hs-line.first .hv, .hs-line.first .h-ini { color: var(--gold); }
 .hs-empty { color: var(--muted); font-size: 13px; text-align: center; padding: 8px 0; }
@@ -233,7 +256,9 @@ html, body {
   font-weight: 800; font-size: 18px; background: var(--bg2); border: 1px solid var(--line);
   border-radius: 10px; color: var(--ink); padding: 10px; font-family: inherit;
 }
-.version { color: var(--muted); font-size: 11px; margin-top: 12px; opacity: 0.7; }
+.version { color: var(--muted); font-size: 11px; margin-top: 14px; padding-bottom: 10px; opacity: 0.7; }
+.hs-head { text-shadow: 0 0 8px rgba(255, 255, 255, 0.15); }
+
 
 /* ===================== PANELS (how / wild) ===================== */
 .panel {
@@ -251,19 +276,20 @@ html, body {
 .how-foot { color: var(--muted); text-align: center; margin: 18px 0 22px; }
 
 /* ===================== DRAFT ===================== */
-.draft-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-.draft-progress { flex: 1; display: flex; justify-content: space-between; align-items: center; }
-#pick-label { font-weight: 800; font-size: 15px; }
-.tokens { display: flex; gap: 10px; }
+.draft-header { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.draft-progress { flex: 1; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+#pick-label { font-weight: 800; font-size: 15px; white-space: nowrap; }
+.tokens { display: flex; gap: 6px; }
 .token {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 6px 10px;
+  padding: 5px 8px;
   font-size: 13px;
   color: var(--ink);
   font-family: inherit;
   cursor: pointer;
+  white-space: nowrap;
 }
 .token:not(:disabled):hover { border-color: var(--gold); }
 .token:disabled { opacity: 0.4; cursor: default; }
@@ -274,7 +300,7 @@ html, body {
   background: var(--panel);
   border: 1px solid var(--gold);
   border-radius: 10px;
-  padding: 6px 10px;
+  padding: 5px 8px;
   font-size: 13px;
   color: var(--ink);
   white-space: nowrap;
@@ -295,14 +321,10 @@ html, body {
   gap: 8px;
   margin-bottom: 16px;
 }
-.court::before {
-  content: "";
-  position: absolute;
-  top: 0; bottom: 0; left: 50%;
-  width: 2px; background: rgba(255,255,255,0.08);
-}
 .slot {
-  background: rgba(0,0,0,0.25);
+  position: relative;
+  z-index: 1; /* sits above the half-court divider line */
+  background: #241812;
   border: 1.5px dashed #6b4a2a;
   border-radius: 10px;
   min-height: 78px;
@@ -315,11 +337,11 @@ html, body {
   position: relative;
 }
 .slot .slot-pos { font-size: 12px; font-weight: 800; color: var(--accent2); }
-.slot .slot-empty { font-size: 10px; color: var(--muted); margin-top: 4px; }
+.slot .slot-empty { font-size: 11px; color: rgba(255, 179, 71, 0.55); margin-top: 4px; }
 .slot.filled { border-style: solid; border-color: var(--accent); background: rgba(255,122,24,0.12); }
 .slot .slot-name { font-size: 11px; font-weight: 700; line-height: 1.15; margin-top: 3px; }
-.slot .slot-era { font-size: 9px; color: var(--muted); }
-.slot.target { box-shadow: 0 0 0 2px var(--gold) inset; }
+.slot .slot-era { font-size: 10px; color: var(--muted); }
+.slot.target { border-style: solid; border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
 
 /* slot machine */
 .draft-floor { flex: 1; display: flex; flex-direction: column; }
@@ -353,6 +375,7 @@ html, body {
 }
 .pcard:active { transform: scale(0.99); }
 .pcard.open { border-color: var(--accent); }
+.pcard-arch { white-space: nowrap; }
 .pcard-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .pcard-name { font-weight: 800; font-size: 15px; }
 .pcard-meta { font-size: 11px; color: var(--muted); }
@@ -382,7 +405,7 @@ html, body {
 .pcard.too-rich .pcost { color: var(--bad); border-color: var(--bad); }
 .ratings { display: flex; gap: 6px; margin-top: 8px; }
 .rbar { flex: 1; text-align: center; }
-.rbar .rk { font-size: 9px; color: var(--muted); }
+.rbar .rk { font-size: 10px; color: var(--muted); }
 .rbar .rv {
   display: block;
   font-size: 12px;
@@ -412,8 +435,9 @@ html, body {
   font-family: inherit;
 }
 .pos-choose .pc-btn:disabled { opacity: 0.3; }
-.pos-choose .pc-btn.natural { border-color: var(--good); color: var(--good); }
-.pos-choose .pc-btn.off { border-color: var(--bad); }
+.pos-choose .pc-btn.natural:disabled { border-color: var(--line); color: var(--muted); background: none; }
+.pos-choose .pc-btn.natural { border-color: var(--good); color: var(--good); background: rgba(52, 211, 153, 0.12); }
+.pos-choose .pc-btn.off { border-color: var(--line); color: var(--muted); }
 
 .draft-actions { display: flex; gap: 10px; margin-bottom: 12px; }
 .btn-sim { margin-top: auto; }
@@ -488,6 +512,7 @@ html, body {
 .rl-slot .rl-name { font-size: 10px; font-weight: 700; line-height: 1.15; margin-top: 3px; }
 .rl-slot .rl-fit { font-size: 13px; margin-top: 3px; }
 
+.fit-legend { font-size: 11px; color: var(--muted); margin: -8px 0 14px; }
 .result-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
 .stat { background: var(--panel); border-radius: 10px; padding: 10px; text-align: left; }
 .stat-k { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
@@ -573,6 +598,23 @@ html, body {
 .confetti { position: fixed; top: -10px; width: 9px; height: 14px; opacity: 0.9; z-index: 50; pointer-events: none; }
 @keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
 
+/* ===================== DESKTOP LAYOUT ===================== */
+@media (min-width: 900px) {
+  #app { max-width: 960px; }
+  .draft-header, .court, .spinner, .draft-actions { max-width: 660px; margin-left: auto; margin-right: auto; width: 100%; }
+  .court { margin: 0 auto 16px; }
+  .btn-sim { width: 100%; max-width: 660px; align-self: center; }
+  .candidates { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; align-items: start; }
+  .candidates .pcard.open { grid-column: 1 / -1; }
+  .wild-panel { max-width: 900px; width: 100%; margin: 0 auto; }
+  .wild-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; align-items: start; }
+  .wild-list .pcard.open { grid-column: 1 / -1; }
+  .result-inner { max-width: 560px; }
+  /* Home becomes two columns: menu left, leaderboards right */
+  .home-inner { max-width: 940px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 48px; align-items: start; }
+  .home-inner > * { grid-column: 1; }
+  .home-inner > .highscores { grid-column: 2; grid-row: 1 / span 7; align-self: center; margin-top: 8px; max-width: none; }
+}
 </style>
 </head>
 <body>
@@ -586,7 +628,7 @@ html, body {
 
         <div class="mode-buttons">
           <button class="btn btn-primary" id="btn-endless">
-            <span class="btn-title">Endless Mode</span>
+            <span class="btn-title">🏀 Endless Mode</span>
             <span class="btn-sub">Fresh random draft, play forever</span>
           </button>
           <button class="btn btn-secondary" id="btn-cap">
@@ -695,6 +737,7 @@ html, body {
         <div id="result-cap" class="result-cap" hidden></div>
 
         <div class="result-lineup" id="result-lineup"></div>
+        <div class="fit-legend">🟢 natural fit · 🟡 okay · 🔴 out of position</div>
 
         <div class="result-stats">
           <div class="stat"><span class="stat-k">MVP</span><span class="stat-v" id="result-mvp">—</span></div>
@@ -1725,18 +1768,18 @@ const PLAYERS = [
   P("Sterling Brown","Bucks","2010s",["SG"],"Role Player",77,64,74,56,62,72),
   P("D.J. Wilson","Bucks","2010s",["PF"],"Role Player",82,60,72,52,70,64),
   P("Thon Maker","Bucks","2010s",["C","PF"],"Role Player",85,56,70,46,66,60),
-  P("Damian Lillard","Trail Blazers","2010s",["PG"],"Sharpshooter",74,92,62,86,58,94),
-  P("CJ McCollum","Trail Blazers","2010s",["SG"],"Scorer",75,86,66,72,56,86),
-  P("Jusuf Nurkic","Trail Blazers","2010s",["C"],"Two-Way Big",84,78,82,72,84,46),
-  P("Al-Farouq Aminu","Trail Blazers","2010s",["PF","SF"],"3&D Wing",81,64,84,58,78,70),
-  P("Maurice Harkless","Trail Blazers","2010s",["SF"],"3&D Wing",79,66,82,58,66,64),
-  P("Enes Kanter","Trail Blazers","2010s",["C"],"Big-Man Scorer",83,78,58,54,86,58),
-  P("Rodney Hood","Trail Blazers","2010s",["SG","SF"],"Sixth Man",80,76,68,64,52,78),
-  P("Seth Curry","Trail Blazers","2010s",["PG","SG"],"Sharpshooter",74,74,64,68,48,88),
-  P("Evan Turner","Trail Blazers","2010s",["SF","SG"],"Glue Guy",79,70,76,80,62,56),
-  P("Zach Collins","Trail Blazers","2010s",["PF","C"],"Glue Guy",83,64,80,52,74,62),
-  P("Meyers Leonard","Trail Blazers","2010s",["C"],"Stretch Big",85,66,60,50,72,80),
-  P("Jake Layman","Trail Blazers","2010s",["SF"],"Role Player",80,70,64,52,62,72),
+  P("Damian Lillard","Blazers","2010s",["PG"],"Sharpshooter",74,92,62,86,58,94),
+  P("CJ McCollum","Blazers","2010s",["SG"],"Scorer",75,86,66,72,56,86),
+  P("Jusuf Nurkic","Blazers","2010s",["C"],"Two-Way Big",84,78,82,72,84,46),
+  P("Al-Farouq Aminu","Blazers","2010s",["PF","SF"],"3&D Wing",81,64,84,58,78,70),
+  P("Maurice Harkless","Blazers","2010s",["SF"],"3&D Wing",79,66,82,58,66,64),
+  P("Enes Kanter","Blazers","2010s",["C"],"Big-Man Scorer",83,78,58,54,86,58),
+  P("Rodney Hood","Blazers","2010s",["SG","SF"],"Sixth Man",80,76,68,64,52,78),
+  P("Seth Curry","Blazers","2010s",["PG","SG"],"Sharpshooter",74,74,64,68,48,88),
+  P("Evan Turner","Blazers","2010s",["SF","SG"],"Glue Guy",79,70,76,80,62,56),
+  P("Zach Collins","Blazers","2010s",["PF","C"],"Glue Guy",83,64,80,52,74,62),
+  P("Meyers Leonard","Blazers","2010s",["C"],"Stretch Big",85,66,60,50,72,80),
+  P("Jake Layman","Blazers","2010s",["SF"],"Role Player",80,70,64,52,62,72),
   P("Kyrie Irving","Celtics","2010s",["PG"],"Slasher",74,90,68,86,56,88),
   P("Jayson Tatum","Celtics","2010s",["SF"],"Scorer",80,82,78,64,72,80),
   P("Jaylen Brown","Celtics","2010s",["SG","SF"],"3&D Wing",78,78,80,58,66,74),
@@ -2450,7 +2493,9 @@ function simulatePlayoffs(result, seed, baseSeed) {
           <span class="slot-name">${r.player.n}</span>
           <span class="slot-era">${r.player.d}</span>`;
       } else {
-        if (targetIdxs && targetIdxs.includes(i)) slot.classList.add("target");
+        // Highlight eligible slots only when the hint means something — with
+        // every slot open, a universal glow conveys nothing.
+        if (targetIdxs && targetIdxs.includes(i) && targetIdxs.length < 5) slot.classList.add("target");
         slot.innerHTML = `<span class="slot-pos">${pos}</span><span class="slot-empty">open</span>`;
       }
       court.appendChild(slot);
@@ -2536,9 +2581,10 @@ function simulatePlayoffs(result, seed, baseSeed) {
     $("btn-reroll").disabled = $("token-reroll").disabled = done || state.rerolls <= 0;
     $("btn-wild").disabled = $("token-wild").disabled = done || state.wild <= 0;
     $("pick-label").textContent = `Pick ${Math.min(state.pick + 1, 5)} / 5`;
+    $("btn-sim").textContent = state.pick < 5 ? "🔒 Draft 5 players to simulate" : "Simulate Season";
     const hud = $("budget-hud");
     hud.hidden = state.mode !== "cap";
-    if (state.mode === "cap") hud.innerHTML = `💰 <b>$${capLeft()}M</b> left`;
+    if (state.mode === "cap") hud.innerHTML = `💰 <b>$${capLeft()}M</b>`;
   }
 
   function renderDraft(animate) {
@@ -2752,7 +2798,7 @@ function simulatePlayoffs(result, seed, baseSeed) {
 
     $("result-mvp").textContent = r.mvp.name;
     $("result-chem").textContent = Math.round(r.chem.mult * 100) + "%";
-    $("result-streak").textContent = r.longestWin + " wins";
+    $("result-streak").textContent = r.longestWin + (r.longestWin === 1 ? " win" : " wins");
     $("result-weak").textContent = r.weakness;
 
     // Pro Scout Mode payoff — reveal the ratings you drafted blind.
@@ -2949,7 +2995,7 @@ function simulatePlayoffs(result, seed, baseSeed) {
     const store = loadStore();
     const chips = [
       ["Best record", store.bestWins ? `${store.bestWins}–${82 - store.bestWins}` : "—"],
-      ["Rings 🏆", store.titles || 0],
+      ["Rings", store.titles || 0],
       ["Perfect 82–0", store.perfects || 0],
       ["Seasons", store.played || 0],
     ];
