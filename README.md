@@ -28,7 +28,7 @@ Or from the CLI: `npx vercel --prod` from the repo root.
 
 ### Global leaderboard (Vercel only)
 
-The repo ships a serverless endpoint (`api/scores.js`) that powers a shared **🌍 Global Top 10** across every player and device. It needs a free Redis store — **either** marketplace provider works:
+The repo ships a serverless endpoint (`api/scores.js`) that powers shared **🌍 Global Top 10** boards across every player and device — one per mode (Classic and Salary Cap, stored under separate keys). It needs a free Redis store — **either** marketplace provider works:
 
 - **Redis** (Redis Cloud) — injects `REDIS_URL`; the endpoint speaks the Redis protocol directly (zero dependencies).
 - **Upstash for Redis** — injects `KV_REST_API_URL` / `KV_REST_API_TOKEN` (or `UPSTASH_REDIS_REST_*`); the endpoint uses Upstash's REST API.
@@ -50,12 +50,12 @@ Without the store (or on GitHub Pages / opening the file directly) the endpoint 
 6. **Run the playoffs.** Make the cut and your record sets your **seed**, then you battle through a 4-round best-of-7 bracket (Round 1 → Conf. Semis → Conf. Finals → Finals) against progressively tougher opponents, with home-court for high seeds. Survive all four rounds to win a **ring** 🏆 — even an 82–0 juggernaut still has to earn it.
 
 ### Modes & options
-- **Daily Challenge** — seeded so everyone gets the same draft each day.
+- **💰 Salary Cap Mode** — every legend has a price (superstars ~$35–42M, role players $1–8M) and you get a **$100M cap** for five slots. Two elite stars nearly exhaust it, so you build around chemistry and needs instead of stacking talent. Separate leaderboard.
 - **Endless Mode** — fresh random draft every time.
 - **🕶️ Pro Scout Mode** (toggle) — hides all stats *and* the archetype label. You draft on **name, team, era, position and listed height** alone. For players who actually know their hoops history.
 
 ### About the database
-**~600 players across 58 real team-eras**, spanning the **1960s–2020s** — each team-era is a believable 10–14-man rotation (stars *and* genuine role players), every one with a listed height. Because most of a roster is role players, picking well is genuinely hard, especially in Pro Mode. Many stars appear as multiple **era-specific versions** — 2000s Cavs LeBron, 2010s Heat LeBron and 2020s Lakers LeBron are different cards with different ratings — so which era you roll matters. You can only draft a given name once.
+**~1,000 players across 93 real team-eras**, spanning the **1960s–2020s** (with deep coverage of the 80s/90s/00s/10s/20s — yes, including three eras of Hornets) — each team-era is a believable 10–14-man rotation (stars *and* genuine role players), every one with a listed height. Because most of a roster is role players, picking well is genuinely hard, especially in Pro Mode. Many stars appear as multiple **era-specific versions** — 2000s Cavs LeBron, 2010s Heat LeBron and 2020s Lakers LeBron are different cards with different ratings — so which era you roll matters. You can only draft a given name once.
 
 ## How it's different from / better than 82-0
 
@@ -64,7 +64,7 @@ Without the store (or on GitHub Pages / opening the file directly) the endpoint 
 | Roster scoring | Black-box number | **Transparent chemistry breakdown** — every bonus & penalty shown |
 | Result | Instant record | **Animated game-by-game season** with hot-hand momentum & streaks |
 | Skips | 2 plain skips | **Reroll tokens + a one-time Wildcard** for any legend |
-| Replay hook | — | **Daily Challenge** (everyone drafts the same teams) + **Endless mode** |
+| Replay hook | — | **Salary Cap mode** (build a contender under a $100M cap) + **Endless mode** |
 | Sharing | — | **Wordle-style shareable result** (🟢🟡🔴 fit grid) |
 | Progress | — | Local **best record / perfect-season / games-played** tracking |
 
@@ -74,7 +74,7 @@ The chemistry engine is the heart of it: even an all-GOAT lineup (Magic / Jordan
 
 The whole game ships as a **single self-contained `index.html`** — markup, all styling (dark theme, responsive, mobile-first), the ~600-player database, the seeded RNG + chemistry + season-simulation engine, and the UI controller (including Pro Scout Mode) are all inlined into that one file. That's what makes it openable anywhere with zero setup.
 
-The simulation is **seeded** (`mulberry32`), so the Daily Challenge is identical for everyone on a given date and results are reproducible.
+The simulation is **seeded** (`mulberry32`), so results are reproducible for a given draft.
 
 ## Balance
 
