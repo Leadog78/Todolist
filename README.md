@@ -40,6 +40,10 @@ Setup:
 
 Without the store (or on GitHub Pages / opening the file directly) the endpoint is simply absent and the game quietly falls back to the device-local board — nothing breaks. Scores are validated server-side (real 82-game records only), but there's no login, so treat it as a friendly arcade board, not a tamper-proof ranking.
 
+## ⚽ THE INVINCIBLES (Premier League spin-off)
+
+The repo also ships a football sibling in `soccer/index.html` — same one-file arcade skeleton, fully adapted to the Premier League: draft a **five-man spine (GK / DF / MF / WG / ST)** from era-specific legends, then simulate a **38-match season** where **draws and points** (3 for a win, 1 for a draw) decide your fate, and chase the immortal **38-0-0**. It has its own **£300M Transfer Budget mode** and its **own global leaderboards** (separate keys on the same `api/scores` endpoint). Play it at `/soccer/` on either deployment: [GitHub Pages](https://leadog78.github.io/Todolist/soccer/) or the `/soccer` path on your Vercel deployment.
+
 ## How it works
 
 1. **Spin the era + franchise.** Each round the slot machine rolls a random **decade and team** (e.g. `1990s · Bulls`, `2020s · Nuggets`). Draft **one** of the legends who played there.

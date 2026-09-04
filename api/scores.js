@@ -1,4 +1,5 @@
-// Vercel serverless function: global top-10 leaderboard for PERFECT SEASON.
+// Vercel serverless function: global top-10 leaderboards for PERFECT SEASON
+// (basketball) and THE INVINCIBLES (football, /soccer).
 //
 // Works with either kind of Redis you can attach in Vercel's Storage tab:
 //  - "Redis" (Redis Cloud marketplace) — injects REDIS_URL, spoken here over
@@ -12,14 +13,21 @@
 import net from "node:net";
 import tls from "node:tls";
 
-const KEY_CLASSIC = "perfectSeason:scores";
-const KEY_CAP = "perfectSeason:scores:cap";
 const MAX_KEEP = 50; // stored entries; responses return the top 10
 
-// Two boards: the classic (endless) ladder keeps its original key, the
-// Salary Cap ladder lives under its own key. Anything but "cap" is classic.
+// Four boards: the basketball pair keeps its original keys, the football
+// pair lives under its own namespace. Anything unrecognized is classic.
+const KEYS = {
+  classic: "perfectSeason:scores",
+  cap: "perfectSeason:scores:cap",
+  soccer: "invincibles:scores",
+  "soccer-cap": "invincibles:scores:cap",
+};
 function boardKey(board) {
-  return board === "cap" ? KEY_CAP : KEY_CLASSIC;
+  return KEYS[board] || KEYS.classic;
+}
+function isSoccer(board) {
+  return board === "soccer" || board === "soccer-cap";
 }
 
 function backend() {
@@ -146,9 +154,9 @@ async function storeSet(be, key, value) {
   if (!r.ok) throw new Error(`redis set ${r.status}`);
 }
 
-// Same ranking as the in-game board: wins, then longest streak, then ring,
-// then earliest achiever.
-function sortScores(a, b) {
+// Same rankings as the in-game boards. Basketball: wins, then longest streak,
+// then ring, then earliest achiever.
+function sortHoops(a, b) {
   return (
     b.wins - a.wins ||
     b.streak - a.streak ||
@@ -156,9 +164,21 @@ function sortScores(a, b) {
     a.ts - b.ts
   );
 }
+// Football: points, then longest unbeaten run, then trophy, then earliest.
+function sortSoccer(a, b) {
+  return (
+    b.pts - a.pts ||
+    b.streak - a.streak ||
+    (b.ring ? 1 : 0) - (a.ring ? 1 : 0) ||
+    a.ts - b.ts
+  );
+}
+function sortFor(board) {
+  return isSoccer(board) ? sortSoccer : sortHoops;
+}
 
-// Strict shape check — the endpoint is public, so trust nothing.
-function sanitize(body) {
+// Strict shape checks — the endpoint is public, so trust nothing.
+function sanitizeHoops(body) {
   const ini = String(body.ini || "")
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "")
@@ -182,6 +202,39 @@ function sanitize(body) {
   };
 }
 
+// Football seasons: 38 matches, 3 pts a win, 1 a draw; streak is the longest
+// unbeaten run (draws count, so it may exceed wins).
+function sanitizeSoccer(body) {
+  const ini = String(body.ini || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 3);
+  const wins = Math.round(Number(body.wins));
+  const draws = Math.round(Number(body.draws));
+  const losses = Math.round(Number(body.losses));
+  const pts = Math.round(Number(body.pts));
+  const streak = Math.round(Number(body.streak));
+  const ts = Math.round(Number(body.ts));
+  if (!ini) return null;
+  if (!Number.isFinite(wins) || wins < 0) return null;
+  if (!Number.isFinite(draws) || draws < 0) return null;
+  if (!Number.isFinite(losses) || losses < 0) return null;
+  if (wins + draws + losses !== 38) return null;
+  if (!Number.isFinite(pts) || pts !== 3 * wins + draws) return null;
+  if (!Number.isFinite(streak) || streak < 0 || streak > 38) return null;
+  return {
+    ini,
+    wins,
+    draws,
+    losses,
+    pts,
+    streak,
+    ring: body.ring === true,
+    mode: body.mode === "cap" ? "cap" : "endless",
+    ts: Number.isFinite(ts) && ts > 0 ? ts : Date.now(),
+  };
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -198,20 +251,22 @@ export default async function handler(req, res) {
       const query =
         req.query || Object.fromEntries(new URL(req.url || "/", "http://x").searchParams);
       const key = boardKey(query.board);
-      const scores = (await storeGet(be, key)).sort(sortScores);
+      const scores = (await storeGet(be, key)).sort(sortFor(query.board));
       return res.status(200).json({ scores: scores.slice(0, 10) });
     }
 
     if (req.method === "POST") {
-      const key = boardKey((req.body || {}).board);
-      const entry = sanitize(req.body || {});
+      const board = (req.body || {}).board;
+      const key = boardKey(board);
+      const entry = (isSoccer(board) ? sanitizeSoccer : sanitizeHoops)(req.body || {});
       if (!entry) return res.status(400).json({ error: "Invalid score" });
       const scores = await storeGet(be, key);
-      // (ini, ts) identifies a season — a resubmit (ring upgrade) replaces it.
+      // (ini, ts) identifies a season — a resubmit (ring/trophy upgrade)
+      // replaces it.
       const i = scores.findIndex((s) => s.ts === entry.ts && s.ini === entry.ini);
       if (i >= 0) scores[i] = entry;
       else scores.push(entry);
-      scores.sort(sortScores);
+      scores.sort(sortFor(board));
       const kept = scores.slice(0, MAX_KEEP);
       await storeSet(be, key, kept);
       return res.status(200).json({ scores: kept.slice(0, 10) });
