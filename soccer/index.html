@@ -1,0 +1,2652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0b0e1a" />
+  <title>THE INVINCIBLES</title>
+  <meta name="description" content="Draft a five-man spine of Premier League legends and simulate a 38-match season. Can you go 38–0–0?" />
+  <style>
+/* ============================================================================
+ * THE INVINCIBLES — styles
+ * ==========================================================================*/
+:root {
+  --bg: #0b0e1a;
+  --bg2: #131830;
+  --panel: #1a2142;
+  --panel2: #222a52;
+  --ink: #eef1ff;
+  --muted: #8b93c4;
+  --accent: #22c55e;
+  --accent2: #86efac;
+  --good: #34d399;
+  --bad: #f87171;
+  --line: #2c3463;
+  --gold: #ffd24a;
+  --radius: 16px;
+  --shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html { height: 100%; }
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+/* Ambient glows live on a fixed layer so no gradient edge can ever appear,
+ * no matter how tall the page scrolls. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #1d2147 0%, transparent 60%),
+    radial-gradient(900px 500px at 100% 110%, #20183a 0%, transparent 55%);
+}
+
+#app {
+  max-width: 540px;
+  margin: 0 auto;
+  min-height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ---- screen switching ---- */
+.screen {
+  display: none;
+  padding: 20px;
+  min-height: 100vh;
+  flex-direction: column;
+  animation: fade 0.3s ease;
+}
+.screen.active { display: flex; }
+@keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* ---- buttons ---- */
+.btn {
+  border: none;
+  border-radius: 14px;
+  padding: 16px 18px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform 0.08s ease, filter 0.15s ease, opacity 0.15s ease;
+  font-family: inherit;
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary:disabled {
+  opacity: 1;
+  background: var(--panel2);
+  color: var(--muted);
+  box-shadow: none;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #06170c;
+  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.35);
+}
+.btn-secondary { background: var(--panel2); }
+.btn-token {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  font-size: 14px;
+  padding: 12px 14px;
+  flex: 1;
+}
+.btn-token:disabled { opacity: 0.35; }
+.link-btn {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 16px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 18px;
+  font-family: inherit;
+}
+.link-btn:hover { color: var(--ink); border-color: var(--gold); }
+a.link-btn { text-decoration: none; display: inline-block; }
+.icon-btn {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* ===================== HOME ===================== */
+#screen-home { justify-content: center; align-items: center; text-align: center; }
+.home-inner { width: 100%; max-width: 420px; }
+.logo {
+  font-size: 44px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  line-height: 0.92;
+  margin: 0 0 4px;
+}
+.logo span {
+  display: block;
+  background: linear-gradient(135deg, var(--accent), var(--gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.tagline { color: var(--muted); font-size: 15px; margin: 8px 0 34px; line-height: 1.5; }
+.mode-buttons { display: flex; flex-direction: column; gap: 14px; }
+.mode-buttons .btn { display: flex; flex-direction: column; gap: 3px; text-align: left; }
+.btn-title { font-size: 18px; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); }
+.btn-sub { font-size: 12px; font-weight: 500; opacity: 0.8; }
+/* Pro Scout Mode toggle */
+.pro-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: 14px;
+  cursor: pointer;
+  text-align: left;
+}
+.pro-toggle input { display: none; }
+.pro-switch {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 26px;
+  border-radius: 14px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  position: relative;
+  transition: background 0.2s;
+}
+.pro-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 0.2s, background 0.2s;
+}
+.pro-toggle input:checked + .pro-switch { background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+.pro-toggle input:checked + .pro-switch::after { transform: translateX(18px); background: #06170c; }
+.pro-text { display: flex; flex-direction: column; gap: 2px; }
+.pro-text b { font-size: 14px; }
+.pro-text small { font-size: 11px; color: var(--muted); }
+
+.scout-note {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  background: var(--panel2);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.records {
+  margin-top: 26px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (max-width: 430px) {
+  .records { grid-template-columns: repeat(2, 1fr); }
+}
+.record-chip {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 8px;
+}
+.record-chip .rc-v { font-size: 20px; font-weight: 800; color: var(--gold); }
+.record-chip .rc-k { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+
+/* ===================== HIGH SCORES ===================== */
+.highscores { margin-top: 18px; width: 100%; max-width: 420px; margin-left: auto; margin-right: auto; }
+.hs-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.hs-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 8px 6px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.hs-tab:not(.active) { filter: saturate(0.4); opacity: 0.7; }
+.hs-tab.active { border-color: var(--gold); color: var(--gold); background: rgba(255, 210, 74, 0.12); }
+.hs-head { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.hs-board { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 6px 14px; text-align: left; }
+.hs-board + .hs-head { margin-top: 16px; }
+.hs-line { display: grid; grid-template-columns: 24px 1fr 62px 56px 34px; gap: 6px; padding: 6px 0; font-size: 14px; align-items: center; }
+.hs-line > :nth-child(3), .hs-line > :nth-child(4) { text-align: right; font-variant-numeric: tabular-nums; }
+.hs-line > :nth-child(5) { text-align: center; }
+.hs-line:not(.head) > :nth-child(5) { font-size: 17px; line-height: 1; }
+.hs-line + .hs-line { border-top: 1px solid var(--line); }
+.hs-line.head { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+.hs-line .hv { font-weight: 800; }
+.hs-line.first .hv, .hs-line.first .h-ini { color: var(--gold); }
+.hs-empty { color: var(--muted); font-size: 13px; text-align: center; padding: 8px 0; }
+.hs-entry { background: var(--panel); border: 1px solid var(--gold); border-radius: 12px; padding: 12px; margin-bottom: 16px; }
+.hs-title { font-weight: 800; color: var(--gold); margin-bottom: 8px; }
+.hs-row { display: flex; gap: 8px; justify-content: center; }
+.hs-input {
+  width: 96px; text-align: center; text-transform: uppercase; letter-spacing: 6px;
+  font-weight: 800; font-size: 18px; background: var(--bg2); border: 1px solid var(--line);
+  border-radius: 10px; color: var(--ink); padding: 10px; font-family: inherit;
+}
+.version { color: var(--muted); font-size: 11px; margin-top: 14px; padding-bottom: 10px; opacity: 0.7; }
+.hs-head { text-shadow: 0 0 8px rgba(255, 255, 255, 0.15); }
+
+
+/* ===================== PANELS (how / wild) ===================== */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin: auto 0;
+  box-shadow: var(--shadow);
+}
+.panel h2 { margin-top: 0; }
+.how-list { padding-left: 20px; line-height: 1.6; color: var(--ink); }
+.how-list li { margin-bottom: 12px; }
+.how-list b { color: var(--accent2); }
+.how-foot { color: var(--muted); text-align: center; margin: 18px 0 22px; }
+
+/* ===================== DRAFT ===================== */
+.draft-header { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.draft-progress { flex: 1; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+#pick-label { font-weight: 800; font-size: 15px; white-space: nowrap; }
+.tokens { display: flex; gap: 6px; }
+.token {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 5px 8px;
+  font-size: 13px;
+  color: var(--ink);
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.token:not(:disabled):hover { border-color: var(--gold); }
+.token:disabled { opacity: 0.4; cursor: default; }
+.token b { color: var(--gold); }
+
+/* cap mode: remaining budget chip in the draft header */
+.budget-hud {
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  padding: 5px 8px;
+  font-size: 13px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.budget-hud b { color: var(--gold); }
+
+/* pitch */
+.court {
+  position: relative;
+  background:
+    repeating-linear-gradient(90deg, transparent, transparent 30px, rgba(255,255,255,0.02) 31px),
+    linear-gradient(180deg, #14331b, #1d4d28);
+  border: 2px solid #2e6b3a;
+  border-radius: 12px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.slot {
+  position: relative;
+  z-index: 1; /* sits above the halfway-line divider */
+  background: #0f2b18;
+  border: 1.5px dashed #3f7a4e;
+  border-radius: 10px;
+  min-height: 78px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 6px 4px;
+  position: relative;
+}
+.slot .slot-pos { font-size: 12px; font-weight: 800; color: var(--accent2); }
+.slot .slot-empty { font-size: 11px; color: rgba(134, 239, 172, 0.55); margin-top: 4px; }
+.slot.filled { border-style: solid; border-color: var(--accent); background: rgba(34,197,94,0.12); }
+.slot .slot-name { font-size: 11px; font-weight: 700; line-height: 1.15; margin-top: 3px; }
+.slot .slot-era { font-size: 10px; color: var(--muted); }
+.slot.target { border-style: solid; border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+
+/* slot machine */
+.draft-floor { flex: 1; display: flex; flex-direction: column; }
+.spinner {
+  text-align: center;
+  background: linear-gradient(135deg, var(--panel2), var(--panel));
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+.spinner-label { display: block; font-size: 11px; letter-spacing: 2px; color: var(--muted); }
+.spinner-team {
+  display: block;
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--gold);
+  min-height: 32px;
+}
+.spinner.spinning .spinner-team { animation: flick 0.08s steps(1) infinite; }
+@keyframes flick { 50% { opacity: 0.4; } }
+
+.candidates { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.pcard {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.08s;
+}
+.pcard:active { transform: scale(0.99); }
+.pcard.open { border-color: var(--accent); }
+.pcard-arch { white-space: nowrap; }
+.pcard-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.pcard-name { font-weight: 800; font-size: 15px; }
+.pcard-meta { font-size: 11px; color: var(--muted); }
+.pcard-arch { font-size: 11px; color: var(--accent2); font-weight: 600; }
+.pcard-pos { display: flex; gap: 4px; }
+.pos-pill {
+  font-size: 10px;
+  font-weight: 800;
+  background: var(--panel2);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+.pcost {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--gold);
+  white-space: nowrap;
+}
+/* over-budget card: dim everything except the price, which flips red */
+.pcard.too-rich .pcard-name, .pcard.too-rich .pcard-meta,
+.pcard.too-rich .pos-pill, .pcard.too-rich .ratings,
+.pcard.too-rich .scout-note { opacity: 0.45; }
+.pcard.too-rich .pcost { color: var(--bad); border-color: var(--bad); }
+.ratings { display: flex; gap: 6px; margin-top: 8px; }
+.rbar { flex: 1; text-align: center; }
+.rbar .rk { font-size: 10px; color: var(--muted); }
+.rbar .rv {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  border-radius: 5px;
+  padding: 2px 0;
+  margin-top: 2px;
+  background: var(--panel2);
+}
+.rv.hi { color: var(--good); }
+.rv.lo { color: var(--bad); }
+
+/* position chooser shown after tapping a card */
+.pos-choose { display: none; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.pcard.open .pos-choose { display: flex; }
+.pos-choose .pc-btn {
+  flex: 1;
+  min-width: 56px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 8px 4px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.pos-choose .pc-btn:disabled { opacity: 0.3; }
+.pos-choose .pc-btn.natural:disabled { border-color: var(--line); color: var(--muted); background: none; }
+.pos-choose .pc-btn.natural { border-color: var(--good); color: var(--good); background: rgba(52, 211, 153, 0.12); }
+.pos-choose .pc-btn.off { border-color: var(--line); color: var(--muted); }
+
+.draft-actions { display: flex; gap: 10px; margin-bottom: 12px; }
+.btn-sim { margin-top: auto; }
+
+/* ===================== WILDCARD ===================== */
+.wild-panel { max-height: 86vh; display: flex; flex-direction: column; }
+.wild-search {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  color: var(--ink);
+  font-size: 15px;
+  margin-bottom: 12px;
+  font-family: inherit;
+}
+.wild-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+
+/* ===================== SIMULATION ===================== */
+#screen-sim { justify-content: center; align-items: center; text-align: center; }
+.sim-inner { width: 100%; max-width: 420px; }
+.sim-record { font-size: 48px; font-weight: 900; letter-spacing: -2px; }
+.sim-record .dash { color: var(--muted); margin: 0 5px; }
+#sim-wins { color: var(--good); }
+#sim-draws { color: var(--gold); }
+#sim-losses { color: var(--bad); }
+.sim-pts { font-size: 15px; font-weight: 700; color: var(--muted); margin-top: 2px; }
+.sim-pts b { color: var(--gold); font-size: 20px; }
+.sim-bar {
+  height: 10px;
+  background: var(--bad);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 16px 0 22px;
+}
+.sim-bar-fill { height: 100%; width: 0; background: var(--good); transition: width 0.1s linear; }
+.sim-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+  margin-bottom: 18px;
+}
+.gcell { aspect-ratio: 1; border-radius: 3px; background: var(--panel); transform: scale(0); transition: transform 0.12s ease; }
+.gcell.show { transform: scale(1); }
+.gcell.w { background: var(--good); }
+.gcell.d { background: var(--gold); }
+.gcell.l { background: var(--bad); }
+.sim-status { color: var(--muted); font-weight: 600; min-height: 22px; }
+
+/* ===================== RESULTS ===================== */
+#screen-result { justify-content: center; }
+.result-inner { width: 100%; max-width: 440px; margin: auto; text-align: center; }
+.grade-badge {
+  width: 96px; height: 96px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; font-weight: 900;
+  border: 3px solid var(--line);
+  background: var(--panel);
+}
+.grade-badge.perfect { font-size: 22px; background: linear-gradient(135deg, var(--gold), var(--accent)); color: #06170c; border-color: var(--gold); box-shadow: 0 0 30px rgba(255,210,74,0.6); }
+.grade-badge.s { color: var(--gold); border-color: var(--gold); }
+.grade-badge.a { color: var(--good); border-color: var(--good); }
+.grade-badge.b { color: #60a5fa; border-color: #60a5fa; }
+.grade-badge.c { color: var(--accent2); border-color: var(--accent2); }
+.grade-badge.d, .grade-badge.e, .grade-badge.f { color: var(--bad); border-color: var(--bad); }
+.result-record { font-size: 40px; font-weight: 900; }
+.result-pts { font-size: 24px; font-weight: 900; color: var(--gold); }
+.result-title { color: var(--muted); margin-bottom: 18px; font-weight: 600; }
+.result-cap { color: var(--gold); font-weight: 700; margin-bottom: 10px; }
+
+.result-lineup { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 18px; }
+.rl-slot { background: var(--panel); border-radius: 8px; padding: 8px 4px; border: 1px solid var(--line); }
+.rl-slot .rl-pos { font-size: 10px; font-weight: 800; color: var(--accent2); }
+.rl-slot .rl-name { font-size: 10px; font-weight: 700; line-height: 1.15; margin-top: 3px; }
+.rl-slot .rl-fit { font-size: 13px; margin-top: 3px; }
+
+.fit-legend { font-size: 11px; color: var(--muted); margin: -8px 0 14px; }
+.result-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.stat { background: var(--panel); border-radius: 10px; padding: 10px; text-align: left; }
+.stat-k { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-v { font-size: 15px; font-weight: 800; }
+
+/* Pro Scout Mode reveal */
+.scout-reveal {
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  text-align: left;
+  animation: fade 0.4s ease;
+}
+.scout-reveal h3 { margin: 0 0 10px; font-size: 14px; color: var(--gold); }
+.reveal-legend { font-size: 11px; color: var(--muted); margin: -2px 0 14px; }
+.reveal-list { display: flex; flex-direction: column; gap: 8px; }
+.reveal-head { padding-bottom: 6px; border-bottom: 1px solid var(--line); margin-bottom: 2px; }
+.reveal-head .rk { width: 26px; text-align: center; font-size: 11px; font-weight: 800; color: var(--accent2); letter-spacing: 0.5px; }
+.reveal-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.reveal-id { display: flex; flex-direction: column; min-width: 0; }
+.reveal-id .reveal-pos { font-size: 10px; font-weight: 800; color: var(--accent2); }
+.reveal-id .reveal-name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reveal-id .reveal-meta { font-size: 10px; color: var(--muted); }
+.reveal-ratings { display: flex; gap: 4px; flex: 0 0 auto; }
+.reveal-ratings .rv {
+  width: 26px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  border-radius: 5px;
+  padding: 3px 0;
+  background: var(--panel2);
+}
+
+.chem-details { background: var(--panel); border-radius: 10px; padding: 4px 14px; margin-bottom: 18px; text-align: left; }
+.chem-details summary { cursor: pointer; padding: 10px 0; font-weight: 700; }
+.chem-details ul { list-style: none; padding: 0; margin: 0 0 12px; }
+.chem-details li { display: flex; justify-content: space-between; padding: 6px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.chem-details li .cd { font-weight: 800; }
+.chem-details li.good .cd { color: var(--good); }
+.chem-details li.bad .cd { color: var(--bad); }
+
+.result-actions { display: flex; flex-direction: column; gap: 10px; }
+.share-toast { color: var(--good); font-weight: 700; min-height: 20px; margin-top: 10px; }
+.missed-note { color: var(--muted); font-size: 13px; text-align: center; margin: 0; }
+
+/* playoffs */
+#screen-playoffs { justify-content: center; }
+.playoffs-inner { width: 100%; max-width: 460px; margin: auto; text-align: center; }
+.po-seed { font-size: 15px; font-weight: 700; color: var(--muted); margin-bottom: 18px; }
+.po-seed b { color: var(--gold); }
+.bracket { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.po-series {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 14px; text-align: left;
+  opacity: 0; transform: translateY(10px); transition: opacity 0.3s, transform 0.3s, border-color 0.3s;
+}
+.po-series.show { opacity: 1; transform: none; }
+.po-series.win { border-color: var(--good); }
+.po-series.loss { border-color: var(--bad); }
+.po-series .po-round { font-size: 11px; color: var(--accent2); font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+.po-series .po-opp { font-size: 14px; font-weight: 700; margin-top: 2px; }
+.po-series .po-right { text-align: right; flex: 0 0 auto; }
+.po-series .po-score { font-size: 18px; font-weight: 900; white-space: nowrap; }
+.po-series.win .po-score { color: var(--good); }
+.po-series.loss .po-score { color: var(--bad); }
+.po-series .po-badge { font-size: 10px; font-weight: 800; letter-spacing: 0.5px; }
+.po-series.win .po-badge { color: var(--good); }
+.po-series.loss .po-badge { color: var(--bad); }
+.po-outcome { min-height: 90px; margin-bottom: 8px; }
+.po-banner {
+  font-size: 30px; font-weight: 900; letter-spacing: -0.5px; padding: 18px;
+  border-radius: 16px; animation: fade 0.5s ease;
+}
+.po-banner.champ { background: linear-gradient(135deg, var(--gold), var(--accent)); color: #06170c; box-shadow: 0 0 36px rgba(255,210,74,0.6); }
+.po-banner.out { background: var(--panel); border: 1px solid var(--line); color: var(--ink); font-size: 20px; }
+.po-banner .po-sub { display: block; font-size: 13px; font-weight: 600; margin-top: 6px; opacity: 0.85; }
+
+/* confetti */
+.confetti { position: fixed; top: -10px; width: 9px; height: 14px; opacity: 0.9; z-index: 50; pointer-events: none; }
+@keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+
+/* ===================== DESKTOP LAYOUT ===================== */
+@media (min-width: 900px) {
+  #app { max-width: 960px; }
+  .draft-header, .court, .spinner, .draft-actions { max-width: 660px; margin-left: auto; margin-right: auto; width: 100%; }
+  .court { margin: 0 auto 16px; }
+  .btn-sim { width: 100%; max-width: 660px; align-self: center; }
+  .candidates { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; align-items: start; }
+  .candidates .pcard.open { grid-column: 1 / -1; }
+  .wild-panel { max-width: 900px; width: 100%; margin: 0 auto; }
+  .wild-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; align-items: start; }
+  .wild-list .pcard.open { grid-column: 1 / -1; }
+  .result-inner { max-width: 560px; }
+  /* Home becomes two columns: menu left, leaderboards right */
+  .home-inner { max-width: 940px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 48px; align-items: start; }
+  .home-inner > * { grid-column: 1; }
+  .home-inner > .highscores { grid-column: 2; grid-row: 1 / span 7; align-self: center; margin-top: 8px; max-width: none; }
+}
+</style>
+</head>
+<body>
+  <div id="app">
+
+    <!-- ===================== HOME ===================== -->
+    <section id="screen-home" class="screen active">
+      <div class="home-inner">
+        <h1 class="logo">THE<span>INVINCIBLES</span></h1>
+        <p class="tagline">Draft a five-man spine. Survive 38 matches. Chase the impossible&nbsp;<b>38–0–0</b>.</p>
+
+        <div class="mode-buttons">
+          <button class="btn btn-primary" id="btn-endless">
+            <span class="btn-title">⚽ Endless Mode</span>
+            <span class="btn-sub">Fresh random draft, play forever</span>
+          </button>
+          <button class="btn btn-secondary" id="btn-cap">
+            <span class="btn-title">💰 Transfer Budget Mode</span>
+            <span class="btn-sub">Five signings, a £300M war chest — spend it wisely</span>
+          </button>
+        </div>
+
+        <label class="pro-toggle" for="pro-toggle">
+          <input type="checkbox" id="pro-toggle" />
+          <span class="pro-switch"></span>
+          <span class="pro-text">
+            <b>🕶️ Pro Scout Mode</b>
+            <small>Stats hidden — judge on name, club, era, position &amp; height alone</small>
+          </span>
+        </label>
+
+        <div class="records" id="home-records"></div>
+
+        <div class="highscores" id="highscores"></div>
+
+        <button class="link-btn" id="btn-how">How to play</button>
+        <a class="link-btn" href="../">🏀 Play PERFECT SEASON</a>
+        <p class="version">v1.0</p>
+      </div>
+    </section>
+
+    <!-- ===================== HOW TO PLAY ===================== -->
+    <section id="screen-how" class="screen">
+      <div class="panel">
+        <h2>How to play</h2>
+        <ol class="how-list">
+          <li><b>Spin the club.</b> Each round the wheel deals you a club-era. Sign <b>one</b> of its legends.</li>
+          <li><b>Fill all five roles</b> — GK, DF, MF, WG, ST. Play someone out of position and they lose effectiveness; an outfielder in goal is a catastrophe.</li>
+          <li><b>Build chemistry.</b> You need a chief creator, clinical finishing, and a commanding back line. Stacking individualists backfires.</li>
+          <li><b>Use your tokens.</b> <b>Reroll</b> deals a new club; the one-time <b>Wildcard</b> lets you sign <i>any</i> legend.</li>
+          <li><b>Simulate 38 matches.</b> 3 points for a win, 1 for a draw — see your points, grade, Player of the Season, and biggest weakness.</li>
+        </ol>
+        <p class="how-foot">Goal: construct the rare spine that goes the whole season unbeaten — <b>38–0–0</b>.</p>
+        <button class="btn btn-primary" id="btn-how-back">Got it</button>
+      </div>
+    </section>
+
+    <!-- ===================== DRAFT ===================== -->
+    <section id="screen-draft" class="screen">
+      <header class="draft-header">
+        <button class="icon-btn" id="btn-quit" title="Quit to menu">✕</button>
+        <div class="draft-progress">
+          <span id="pick-label">Signing 1 / 5</span>
+          <span id="budget-hud" class="budget-hud" hidden></span>
+          <div class="tokens">
+            <button type="button" class="token" id="token-reroll" title="Reroll team">🔄 <b id="reroll-count">3</b></button>
+            <button type="button" class="token" id="token-wild" title="Wildcard pick">⭐ <b id="wild-count">1</b></button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Pitch with the 5 lineup slots -->
+      <div class="court" id="court"></div>
+
+      <!-- Slot machine + candidate cards -->
+      <div class="draft-floor">
+        <div class="spinner" id="spinner">
+          <span class="spinner-label" id="spinner-label">NOW SIGNING</span>
+          <span class="spinner-team" id="spinner-team">—</span>
+        </div>
+
+        <div class="candidates" id="candidates"></div>
+
+        <div class="draft-actions">
+          <button class="btn btn-token" id="btn-reroll">🔄 Reroll team</button>
+          <button class="btn btn-token" id="btn-wild">⭐ Wildcard pick</button>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-sim" id="btn-sim" disabled>Simulate Season</button>
+    </section>
+
+    <!-- ===================== WILDCARD PICKER ===================== -->
+    <section id="screen-wild" class="screen">
+      <div class="panel wild-panel">
+        <h2>⭐ Wildcard — sign any legend</h2>
+        <input type="text" id="wild-search" class="wild-search" placeholder="Search by name or club…" />
+        <div class="wild-list" id="wild-list"></div>
+        <button class="btn btn-secondary" id="btn-wild-cancel">Cancel</button>
+      </div>
+    </section>
+
+    <!-- ===================== SIMULATION ===================== -->
+    <section id="screen-sim" class="screen">
+      <div class="sim-inner">
+        <div class="sim-record">
+          <span id="sim-wins">0</span><span class="dash">–</span><span id="sim-draws">0</span><span class="dash">–</span><span id="sim-losses">0</span>
+        </div>
+        <div class="sim-pts"><b id="sim-pts">0</b> PTS</div>
+        <div class="sim-bar"><div class="sim-bar-fill" id="sim-bar-fill"></div></div>
+        <div class="sim-grid" id="sim-grid"></div>
+        <p class="sim-status" id="sim-status">Kickoff…</p>
+      </div>
+    </section>
+
+    <!-- ===================== RESULTS ===================== -->
+    <section id="screen-result" class="screen">
+      <div class="result-inner">
+        <div class="grade-badge" id="grade-badge"></div>
+        <div class="result-record" id="result-record"></div>
+        <div class="result-pts" id="result-pts"></div>
+        <div class="result-title" id="result-title"></div>
+        <div id="result-cap" class="result-cap" hidden></div>
+
+        <div class="result-lineup" id="result-lineup"></div>
+        <div class="fit-legend">🟢 natural fit · 🟡 okay · 🔴 out of position</div>
+
+        <div class="result-stats">
+          <div class="stat"><span class="stat-k">Player of the Season</span><span class="stat-v" id="result-mvp">—</span></div>
+          <div class="stat"><span class="stat-k">Chemistry</span><span class="stat-v" id="result-chem">—</span></div>
+          <div class="stat"><span class="stat-k">Best unbeaten run</span><span class="stat-v" id="result-streak">—</span></div>
+          <div class="stat"><span class="stat-k">Weakness</span><span class="stat-v" id="result-weak">—</span></div>
+        </div>
+
+        <!-- Pro Scout Mode payoff: the stats you drafted blind, revealed -->
+        <div class="scout-reveal" id="scout-reveal" hidden>
+          <h3>🕶️ Scouting report revealed</h3>
+          <p class="reveal-legend">ATT attacking · DEF defending · PAS passing/creativity · PHY physical/aerial · FIN finishing</p>
+          <div class="reveal-list" id="reveal-list"></div>
+        </div>
+
+        <details class="chem-details">
+          <summary>Chemistry breakdown</summary>
+          <ul id="chem-list"></ul>
+        </details>
+
+        <!-- High-score entry: shown only when the season makes the top 10 -->
+        <div class="hs-entry" id="hs-entry" hidden>
+          <div class="hs-title" id="hs-entry-title">🏅 Top-10 season! Enter your initials</div>
+          <div class="hs-row" id="hs-entry-row">
+            <input type="text" id="hs-initials" class="hs-input" maxlength="3" placeholder="AAA"
+                   autocomplete="off" autocapitalize="characters" spellcheck="false" />
+            <button type="button" class="btn btn-secondary" id="btn-hs-save">Save score</button>
+          </div>
+        </div>
+
+        <div class="result-actions">
+          <button class="btn btn-primary" id="btn-playoffs">🏆 Enter Europe</button>
+          <p class="missed-note" id="missed-note" hidden>Missed Europe — rebuild and go again.</p>
+          <button class="btn btn-secondary" id="btn-share">Share result</button>
+          <button class="btn btn-secondary" id="btn-again">Play again</button>
+          <button class="link-btn" id="btn-home">Main menu</button>
+        </div>
+        <p class="share-toast" id="share-toast"></p>
+      </div>
+    </section>
+
+    <!-- ===================== EUROPEAN CUP ===================== -->
+    <section id="screen-playoffs" class="screen">
+      <div class="playoffs-inner">
+        <div class="po-seed" id="po-seed"></div>
+        <div class="bracket" id="bracket"></div>
+        <div class="po-outcome" id="po-outcome"></div>
+        <div class="result-actions" id="po-actions" hidden>
+          <button class="btn btn-primary" id="btn-po-share">Share result</button>
+          <button class="btn btn-secondary" id="btn-po-again">Play again</button>
+          <button class="link-btn" id="btn-po-home">Main menu</button>
+        </div>
+        <p class="share-toast" id="po-toast"></p>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+/* ============================================================================
+ * THE INVINCIBLES — player & club data
+ * ----------------------------------------------------------------------------
+ * Placeholder pool: three era-defining Premier League squads (11 men each) so
+ * the slot machine, drafting and tuning work end to end. A full roster
+ * expansion lands later — keep every club-era at 8+ candidates.
+ *
+ * Non-commercial fan game; ratings are subjective approximations on a 60-99
+ * scale, meant for fun. A goalkeeper's def IS shot-stopping.
+ *
+ *   n name  t club(era)  d decade  p positions[]  a archetype
+ *   hi height in inches   atk attacking  def defending  pas passing/creativity
+ *   phy physical/aerial   fin finishing
+ * ==========================================================================*/
+
+const POSITIONS = ["GK", "DF", "MF", "WG", "ST"];
+
+const POSITION_NAMES = {
+  GK: "Goalkeeper",
+  DF: "Defender",
+  MF: "Midfielder",
+  WG: "Winger",
+  ST: "Striker",
+};
+
+function formatHeight(inches) {
+  return Math.floor(inches / 12) + "'" + (inches % 12) + '"';
+}
+
+// Compact constructor: P(name,club,decade,positions,archetype,height-inches,
+// attacking, defending, passing, physical, finishing)
+function P(n, t, d, p, a, hi, atk, def, pas, phy, fin) {
+  return { n, t, d, p, a, hi, atk, def, pas, phy, fin };
+}
+
+const PLAYERS = [
+  P("Peter Schmeichel","Man United","1990s",["GK"],"Shot Stopper",76,40,95,68,92,38),
+  P("Gary Neville","Man United","1990s",["DF"],"No-Nonsense Full-Back",71,48,81,70,68,38),
+  P("Denis Irwin","Man United","1990s",["DF"],"Full-Back Raider",70,62,83,76,66,60),
+  P("Gary Pallister","Man United","1990s",["DF"],"Colossus",76,38,87,60,86,40),
+  P("Steve Bruce","Man United","1990s",["DF"],"Colossus",72,50,84,58,84,60),
+  P("Roy Keane","Man United","1990s",["MF"],"Box-to-Box",70,72,87,80,89,62),
+  P("Paul Scholes","Man United","1990s",["MF"],"Playmaker",66,82,48,89,55,80),
+  P("Ryan Giggs","Man United","1990s",["WG"],"Winger",70,90,42,80,68,76),
+  P("David Beckham","Man United","1990s",["WG"],"Winger",72,84,50,91,65,78),
+  P("Eric Cantona","Man United","1990s",["ST"],"Complete Forward",74,91,40,87,82,89),
+  P("Andy Cole","Man United","1990s",["ST"],"Poacher",70,82,35,62,68,88),
+  P("Ole Gunnar Solskjaer","Man United","1990s",["ST"],"Super-Sub",70,76,40,66,58,85),
+  P("David Seaman","Arsenal","1990s",["GK"],"Shot Stopper",76,40,93,62,88,36),
+  P("Tony Adams","Arsenal","1990s",["DF"],"Colossus",75,45,92,62,88,48),
+  P("Lee Dixon","Arsenal","1990s",["DF"],"Full-Back Raider",69,58,84,68,70,45),
+  P("Nigel Winterburn","Arsenal","1990s",["DF"],"No-Nonsense Full-Back",68,55,83,66,68,42),
+  P("Steve Bould","Arsenal","1990s",["DF"],"Colossus",76,38,85,55,84,38),
+  P("Patrick Vieira","Arsenal","1990s",["MF"],"Box-to-Box",76,74,87,82,90,60),
+  P("Emmanuel Petit","Arsenal","1990s",["MF"],"Deep-Lying Playmaker",73,65,82,84,80,62),
+  P("Ray Parlour","Arsenal","1990s",["WG","MF"],"Engine",70,66,72,70,76,55),
+  P("Marc Overmars","Arsenal","1990s",["WG"],"Winger",68,88,40,74,60,78),
+  P("Ian Wright","Arsenal","1990s",["ST"],"Poacher",69,86,38,62,70,93),
+  P("Dennis Bergkamp","Arsenal","1990s",["ST"],"Complete Forward",72,90,42,92,70,87),
+  P("Nicolas Anelka","Arsenal","1990s",["ST"],"Poacher",73,80,36,58,72,81),
+  P("David James","Liverpool","1990s",["GK"],"Shot Stopper",76,40,79,66,82,36),
+  P("Rob Jones","Liverpool","1990s",["DF"],"No-Nonsense Full-Back",71,52,82,66,66,36),
+  P("Mark Wright","Liverpool","1990s",["DF"],"Colossus",74,42,83,62,80,40),
+  P("Phil Babb","Liverpool","1990s",["DF"],"Pace Defender",72,38,76,58,74,36),
+  P("Neil Ruddock","Liverpool","1990s",["DF"],"Colossus",74,42,78,62,85,45),
+  P("John Barnes","Liverpool","1990s",["MF","WG"],"Deep-Lying Playmaker",71,74,55,86,70,70),
+  P("Jamie Redknapp","Liverpool","1990s",["MF"],"Playmaker",72,70,58,84,62,68),
+  P("Paul Ince","Liverpool","1990s",["MF"],"Destroyer",70,65,84,74,84,58),
+  P("Steve McManaman","Liverpool","1990s",["WG"],"Winger",72,87,45,83,60,70),
+  P("Robbie Fowler","Liverpool","1990s",["ST"],"Poacher",70,85,36,64,66,93),
+  P("Ian Rush","Liverpool","1990s",["ST"],"Poacher",72,80,45,60,68,88),
+  P("Michael Owen","Liverpool","1990s",["ST"],"Poacher",68,84,35,58,62,87),
+  P("Pavel Srnicek","Newcastle","1990s",["GK"],"Shot Stopper",76,38,80,55,78,36),
+  P("Philippe Albert","Newcastle","1990s",["DF"],"Ball-Playing Defender",75,68,80,78,82,65),
+  P("Steve Howey","Newcastle","1990s",["DF"],"Colossus",73,40,79,60,76,38),
+  P("John Beresford","Newcastle","1990s",["DF"],"Full-Back Raider",69,58,76,68,66,45),
+  P("Warren Barton","Newcastle","1990s",["DF"],"Full-Back Raider",73,56,77,66,70,42),
+  P("Rob Lee","Newcastle","1990s",["MF"],"Box-to-Box",70,74,70,78,74,68),
+  P("Lee Clark","Newcastle","1990s",["MF"],"Playmaker",68,64,52,74,58,55),
+  P("David Ginola","Newcastle","1990s",["WG"],"Winger",71,89,35,82,70,74),
+  P("Keith Gillespie","Newcastle","1990s",["WG"],"Winger",70,74,45,70,58,52),
+  P("Les Ferdinand","Newcastle","1990s",["ST"],"Target Man",71,84,40,60,88,86),
+  P("Tino Asprilla","Newcastle","1990s",["ST"],"Maverick",70,82,38,70,76,74),
+  P("Peter Beardsley","Newcastle","1990s",["ST","MF"],"Playmaker",68,85,45,89,60,80),
+  P("John Lukic","Leeds","1990s",["GK"],"Shot Stopper",76,38,82,55,80,36),
+  P("Lucas Radebe","Leeds","1990s",["DF"],"Colossus",73,40,86,62,82,38),
+  P("Gary Kelly","Leeds","1990s",["DF"],"No-Nonsense Full-Back",68,52,79,64,66,38),
+  P("Tony Dorigo","Leeds","1990s",["DF"],"Full-Back Raider",69,62,78,72,66,48),
+  P("Chris Fairclough","Leeds","1990s",["DF"],"Colossus",72,42,77,56,76,45),
+  P("Gordon Strachan","Leeds","1990s",["MF"],"Playmaker",66,78,55,87,62,68),
+  P("Gary McAllister","Leeds","1990s",["MF"],"Deep-Lying Playmaker",73,72,58,88,64,70),
+  P("David Batty","Leeds","1990s",["MF"],"Destroyer",68,45,84,72,82,35),
+  P("Gary Speed","Leeds","1990s",["MF","WG"],"Box-to-Box",72,74,68,74,78,72),
+  P("Rod Wallace","Leeds","1990s",["WG","ST"],"Winger",66,76,40,64,60,72),
+  P("Tony Yeboah","Leeds","1990s",["ST"],"Target Man",70,84,38,58,84,88),
+  P("Lee Chapman","Leeds","1990s",["ST"],"Target Man",74,70,40,50,82,76),
+  P("Tim Flowers","Blackburn","1990s",["GK"],"Shot Stopper",74,38,85,58,80,36),
+  P("Colin Hendry","Blackburn","1990s",["DF"],"Colossus",73,40,87,58,86,42),
+  P("Graeme Le Saux","Blackburn","1990s",["DF"],"Full-Back Raider",70,68,80,76,70,55),
+  P("Henning Berg","Blackburn","1990s",["DF"],"Utility Man",72,44,80,62,72,36),
+  P("Jeff Kenna","Blackburn","1990s",["DF"],"No-Nonsense Full-Back",71,50,74,62,66,38),
+  P("Tim Sherwood","Blackburn","1990s",["MF"],"Box-to-Box",72,64,72,76,74,58),
+  P("Mark Atkins","Blackburn","1990s",["MF"],"Utility Man",73,55,68,62,70,52),
+  P("Jason Wilcox","Blackburn","1990s",["WG"],"Winger",71,76,45,72,62,60),
+  P("Stuart Ripley","Blackburn","1990s",["WG"],"Winger",71,74,48,73,68,50),
+  P("Alan Shearer","Blackburn","1990s",["ST"],"Complete Forward",71,90,42,66,88,94),
+  P("Chris Sutton","Blackburn","1990s",["ST"],"Target Man",75,78,55,64,84,80),
+  P("Mike Newell","Blackburn","1990s",["ST"],"Target Man",72,66,45,58,74,68),
+  P("Mark Bosnich","Aston Villa","1990s",["GK"],"Shot Stopper",73,40,84,58,78,36),
+  P("Paul McGrath","Aston Villa","1990s",["DF"],"Colossus",73,45,91,66,84,42),
+  P("Gareth Southgate","Aston Villa","1990s",["DF"],"Ball-Playing Defender",72,48,84,76,74,40),
+  P("Ugo Ehiogu","Aston Villa","1990s",["DF"],"Colossus",74,40,80,58,82,42),
+  P("Alan Wright","Aston Villa","1990s",["DF"],"Full-Back Raider",64,58,74,68,55,42),
+  P("Andy Townsend","Aston Villa","1990s",["MF"],"Box-to-Box",71,64,74,75,76,55),
+  P("Kevin Richardson","Aston Villa","1990s",["MF"],"Engine",69,55,74,72,70,48),
+  P("Ian Taylor","Aston Villa","1990s",["MF"],"Box-to-Box",72,62,68,66,74,62),
+  P("Tony Daley","Aston Villa","1990s",["WG"],"Winger",68,76,38,62,64,48),
+  P("Dwight Yorke","Aston Villa","1990s",["ST"],"Complete Forward",71,84,40,76,70,84),
+  P("Dean Saunders","Aston Villa","1990s",["ST"],"Poacher",68,78,38,60,66,82),
+  P("Savo Milosevic","Aston Villa","1990s",["ST"],"Maverick",73,68,36,55,76,62),
+  P("Neville Southall","Everton","1990s",["GK"],"Shot Stopper",73,38,91,55,84,36),
+  P("Dave Watson","Everton","1990s",["DF"],"Colossus",72,42,83,56,84,45),
+  P("Andy Hinchcliffe","Everton","1990s",["DF"],"Full-Back Raider",70,60,76,80,70,48),
+  P("David Unsworth","Everton","1990s",["DF"],"Utility Man",73,45,77,60,80,55),
+  P("Joe Parkinson","Everton","1990s",["MF"],"Destroyer",71,42,76,60,78,38),
+  P("Barry Horne","Everton","1990s",["MF"],"Destroyer",70,45,74,64,72,40),
+  P("Nick Barmby","Everton","1990s",["MF"],"Playmaker",67,72,50,76,58,66),
+  P("Andrei Kanchelskis","Everton","1990s",["WG"],"Winger",70,84,42,72,70,78),
+  P("Anders Limpar","Everton","1990s",["WG"],"Winger",69,76,38,74,55,62),
+  P("Duncan Ferguson","Everton","1990s",["ST"],"Target Man",76,76,45,52,91,74),
+  P("Tony Cottee","Everton","1990s",["ST"],"Poacher",67,72,35,55,56,80),
+  P("Paul Rideout","Everton","1990s",["ST"],"Super-Sub",72,62,42,55,70,66),
+  P("Ian Walker","Spurs","1990s",["GK"],"Shot Stopper",74,38,80,60,74,35),
+  P("Sol Campbell","Spurs","1990s",["DF"],"Colossus",74,45,88,62,88,42),
+  P("Gary Mabbutt","Spurs","1990s",["DF"],"Colossus",73,44,82,64,76,45),
+  P("Justin Edinburgh","Spurs","1990s",["DF"],"No-Nonsense Full-Back",69,45,72,60,66,35),
+  P("Stephen Carr","Spurs","1990s",["DF"],"Full-Back Raider",69,58,76,68,70,45),
+  P("David Howells","Spurs","1990s",["MF"],"Destroyer",72,52,72,66,68,50),
+  P("Allan Nielsen","Spurs","1990s",["MF"],"Engine",68,60,68,68,70,58),
+  P("Steffen Freund","Spurs","1990s",["MF"],"Destroyer",71,40,76,68,76,35),
+  P("Darren Anderton","Spurs","1990s",["WG","MF"],"Winger",73,78,55,82,58,70),
+  P("Ruel Fox","Spurs","1990s",["WG"],"Winger",66,72,42,68,56,58),
+  P("Jurgen Klinsmann","Spurs","1990s",["ST"],"Complete Forward",71,88,42,74,78,91),
+  P("Teddy Sheringham","Spurs","1990s",["ST"],"Complete Forward",72,84,42,86,70,86),
+  P("Ed de Goey","Chelsea","1990s",["GK"],"Shot Stopper",78,38,82,55,80,35),
+  P("Marcel Desailly","Chelsea","1990s",["DF"],"Colossus",73,48,90,74,90,42),
+  P("Frank Leboeuf","Chelsea","1990s",["DF"],"Ball-Playing Defender",73,50,80,85,70,55),
+  P("Steve Clarke","Chelsea","1990s",["DF"],"No-Nonsense Full-Back",70,45,79,62,68,36),
+  P("Celestine Babayaro","Chelsea","1990s",["DF"],"Full-Back Raider",69,60,74,66,70,45),
+  P("Dennis Wise","Chelsea","1990s",["MF"],"Destroyer",66,62,76,74,76,58),
+  P("Roberto Di Matteo","Chelsea","1990s",["MF"],"Box-to-Box",70,70,72,78,72,68),
+  P("Ruud Gullit","Chelsea","1990s",["MF"],"Playmaker",75,78,66,85,82,72),
+  P("Dan Petrescu","Chelsea","1990s",["WG","DF"],"Full-Back Raider",70,72,70,74,66,62),
+  P("Gianfranco Zola","Chelsea","1990s",["ST"],"Playmaker",66,89,38,90,58,87),
+  P("Mark Hughes","Chelsea","1990s",["ST"],"Target Man",70,78,48,68,87,78),
+  P("Tore Andre Flo","Chelsea","1990s",["ST"],"Super-Sub",76,72,40,60,80,76),
+  P("Neil Sullivan","Wimbledon","1990s",["GK"],"Shot Stopper",74,36,81,55,74,35),
+  P("Hans Segers","Wimbledon","1990s",["GK"],"Shot Stopper",73,36,75,52,70,35),
+  P("Kenny Cunningham","Wimbledon","1990s",["DF"],"No-Nonsense Full-Back",71,42,79,64,70,35),
+  P("Chris Perry","Wimbledon","1990s",["DF"],"Pace Defender",70,40,78,60,68,36),
+  P("Alan Kimble","Wimbledon","1990s",["DF"],"No-Nonsense Full-Back",68,45,70,62,64,40),
+  P("Vinnie Jones","Wimbledon","1990s",["MF"],"Destroyer",72,48,74,60,90,48),
+  P("Robbie Earle","Wimbledon","1990s",["MF"],"Box-to-Box",69,68,66,70,74,70),
+  P("Oyvind Leonhardsen","Wimbledon","1990s",["MF"],"Engine",69,66,64,70,76,60),
+  P("Michael Hughes","Wimbledon","1990s",["WG"],"Winger",67,70,45,70,60,56),
+  P("Neal Ardley","Wimbledon","1990s",["WG"],"Winger",71,62,48,72,58,45),
+  P("John Fashanu","Wimbledon","1990s",["ST"],"Target Man",73,74,45,50,90,76),
+  P("Dean Holdsworth","Wimbledon","1990s",["ST"],"Poacher",71,70,38,55,66,78),
+  P("Mark Crossley","Forest","1990s",["GK"],"Shot Stopper",72,36,79,52,76,35),
+  P("Stuart Pearce","Forest","1990s",["DF"],"Full-Back Raider",70,65,87,70,91,72),
+  P("Des Walker","Forest","1990s",["DF"],"Pace Defender",71,38,89,60,78,35),
+  P("Colin Cooper","Forest","1990s",["DF"],"Colossus",70,42,78,60,74,45),
+  P("Steve Chettle","Forest","1990s",["DF"],"Colossus",73,38,74,56,72,36),
+  P("Ian Woan","Forest","1990s",["MF","WG"],"Playmaker",71,64,52,74,60,64),
+  P("Scot Gemmill","Forest","1990s",["MF"],"Engine",71,58,64,70,66,50),
+  P("Steve Hodge","Forest","1990s",["MF"],"Box-to-Box",68,68,62,72,66,64),
+  P("Steve Stone","Forest","1990s",["WG","MF"],"Winger",69,78,58,70,76,62),
+  P("Stan Collymore","Forest","1990s",["ST"],"Complete Forward",74,88,36,70,80,87),
+  P("Bryan Roy","Forest","1990s",["ST","WG"],"Maverick",70,78,36,72,56,70),
+  P("Nigel Clough","Forest","1990s",["ST","MF"],"Playmaker",69,74,42,82,58,74),
+  P("Fabien Barthez","Man United","2000s",["GK"],"Sweeper Keeper",71,40,85,68,74,36),
+  P("Rio Ferdinand","Man United","2000s",["DF"],"Ball-Playing Defender",74,45,93,78,84,40),
+  P("Nemanja Vidic","Man United","2000s",["DF"],"Colossus",74,40,92,58,93,45),
+  P("Gary Neville","Man United","2000s",["DF"],"Full-Back Raider",71,55,84,72,76,40),
+  P("Patrice Evra","Man United","2000s",["DF"],"Full-Back Raider",68,68,85,74,80,42),
+  P("Paul Scholes","Man United","2000s",["MF"],"Playmaker",67,84,52,94,62,82),
+  P("Roy Keane","Man United","2000s",["MF"],"Destroyer",70,66,88,80,90,60),
+  P("Michael Carrick","Man United","2000s",["MF"],"Deep-Lying Playmaker",74,58,76,86,70,50),
+  P("Cristiano Ronaldo","Man United","2000s",["WG","ST"],"Complete Forward",74,95,38,78,84,92),
+  P("Ryan Giggs","Man United","2000s",["WG"],"Winger",71,84,50,85,70,72),
+  P("Wayne Rooney","Man United","2000s",["ST"],"Complete Forward",69,91,55,84,86,89),
+  P("Ruud van Nistelrooy","Man United","2000s",["ST"],"Poacher",74,88,35,62,78,94),
+  P("Jens Lehmann","Arsenal","2000s",["GK"],"Shot Stopper",75,40,88,66,84,36),
+  P("Sol Campbell","Arsenal","2000s",["DF"],"Colossus",74,42,92,60,91,45),
+  P("Kolo Toure","Arsenal","2000s",["DF"],"Ball-Playing Defender",70,50,87,65,85,45),
+  P("Ashley Cole","Arsenal","2000s",["DF"],"Full-Back Raider",68,70,86,72,80,45),
+  P("Lauren","Arsenal","2000s",["DF"],"Full-Back Raider",70,58,80,66,78,40),
+  P("Patrick Vieira","Arsenal","2000s",["MF"],"Box-to-Box",76,75,87,84,92,62),
+  P("Gilberto Silva","Arsenal","2000s",["MF"],"Destroyer",73,55,84,76,80,55),
+  P("Robert Pires","Arsenal","2000s",["WG"],"Winger",73,89,42,87,62,84),
+  P("Freddie Ljungberg","Arsenal","2000s",["WG"],"Winger",69,84,55,76,72,80),
+  P("Thierry Henry","Arsenal","2000s",["ST","WG"],"Complete Forward",74,96,45,84,70,95),
+  P("Dennis Bergkamp","Arsenal","2000s",["ST","MF"],"Playmaker",72,88,40,91,68,86),
+  P("Nwankwo Kanu","Arsenal","2000s",["ST"],"Super-Sub",77,78,35,72,74,76),
+  P("Petr Cech","Chelsea","2000s",["GK"],"Shot Stopper",77,38,93,68,88,35),
+  P("John Terry","Chelsea","2000s",["DF"],"Colossus",73,45,93,68,90,55),
+  P("Ricardo Carvalho","Chelsea","2000s",["DF"],"Ball-Playing Defender",72,42,90,74,78,40),
+  P("William Gallas","Chelsea","2000s",["DF"],"Utility Man",71,45,86,62,82,48),
+  P("Paulo Ferreira","Chelsea","2000s",["DF"],"Full-Back Raider",70,50,78,64,72,38),
+  P("Frank Lampard","Chelsea","2000s",["MF"],"Box-to-Box",72,88,62,88,78,88),
+  P("Claude Makelele","Chelsea","2000s",["MF"],"Destroyer",67,40,91,78,76,38),
+  P("Michael Essien","Chelsea","2000s",["MF"],"Engine",70,72,87,78,90,68),
+  P("Arjen Robben","Chelsea","2000s",["WG"],"Inverted Winger",71,90,38,78,60,82),
+  P("Damien Duff","Chelsea","2000s",["WG"],"Winger",69,82,48,74,64,74),
+  P("Didier Drogba","Chelsea","2000s",["ST"],"Complete Forward",74,90,48,68,93,91),
+  P("Eidur Gudjohnsen","Chelsea","2000s",["ST","MF"],"Super-Sub",73,80,45,78,72,79),
+  P("Jerzy Dudek","Liverpool","2000s",["GK"],"Shot Stopper",74,38,85,60,76,35),
+  P("Jamie Carragher","Liverpool","2000s",["DF"],"Colossus",73,38,90,62,84,38),
+  P("Sami Hyypia","Liverpool","2000s",["DF"],"Colossus",76,42,89,68,88,52),
+  P("Steve Finnan","Liverpool","2000s",["DF"],"Full-Back Raider",72,52,80,68,72,38),
+  P("John Arne Riise","Liverpool","2000s",["DF"],"Full-Back Raider",73,70,76,70,82,68),
+  P("Steven Gerrard","Liverpool","2000s",["MF"],"Box-to-Box",72,92,78,90,86,86),
+  P("Xabi Alonso","Liverpool","2000s",["MF"],"Deep-Lying Playmaker",72,68,74,92,70,66),
+  P("Dietmar Hamann","Liverpool","2000s",["MF"],"Destroyer",75,45,84,74,76,42),
+  P("Luis Garcia","Liverpool","2000s",["WG","MF"],"Inverted Winger",67,80,40,76,58,78),
+  P("Fernando Torres","Liverpool","2000s",["ST"],"Complete Forward",73,91,35,70,80,92),
+  P("Dirk Kuyt","Liverpool","2000s",["ST","WG"],"Engine",72,74,68,70,80,74),
+  P("Milan Baros","Liverpool","2000s",["ST"],"Super-Sub",72,72,35,55,72,74),
+  P("Shay Given","Newcastle","2000s",["GK"],"Shot Stopper",73,38,90,62,74,35),
+  P("Aaron Hughes","Newcastle","2000s",["DF"],"Utility Man",72,40,78,62,70,36),
+  P("Titus Bramble","Newcastle","2000s",["DF"],"Colossus",73,38,64,45,84,40),
+  P("Andy O'Brien","Newcastle","2000s",["DF"],"Colossus",75,38,72,50,74,38),
+  P("Olivier Bernard","Newcastle","2000s",["DF"],"Full-Back Raider",67,55,68,60,68,42),
+  P("Gary Speed","Newcastle","2000s",["MF"],"Box-to-Box",70,68,74,78,78,68),
+  P("Kieron Dyer","Newcastle","2000s",["MF"],"Engine",67,78,50,74,62,66),
+  P("Laurent Robert","Newcastle","2000s",["WG"],"Winger",70,80,38,76,60,76),
+  P("Nolberto Solano","Newcastle","2000s",["WG"],"Winger",68,76,50,80,58,70),
+  P("Alan Shearer","Newcastle","2000s",["ST"],"Target Man",72,88,45,66,88,93),
+  P("Craig Bellamy","Newcastle","2000s",["ST","WG"],"Poacher",69,85,40,68,66,78),
+  P("Shola Ameobi","Newcastle","2000s",["ST"],"Super-Sub",75,62,42,50,76,60),
+  P("Nigel Martyn","Leeds","2000s",["GK"],"Shot Stopper",74,38,88,58,78,35),
+  P("Lucas Radebe","Leeds","2000s",["DF"],"Colossus",73,38,86,58,84,38),
+  P("Jonathan Woodgate","Leeds","2000s",["DF"],"Ball-Playing Defender",74,40,85,68,76,38),
+  P("Ian Harte","Leeds","2000s",["DF"],"Full-Back Raider",71,62,72,74,68,74),
+  P("Danny Mills","Leeds","2000s",["DF"],"Full-Back Raider",71,45,76,55,80,38),
+  P("Olivier Dacourt","Leeds","2000s",["MF"],"Destroyer",69,58,82,76,78,50),
+  P("David Batty","Leeds","2000s",["MF"],"Destroyer",68,40,82,70,78,36),
+  P("Eirik Bakke","Leeds","2000s",["MF"],"Box-to-Box",73,55,70,64,74,52),
+  P("Lee Bowyer","Leeds","2000s",["MF"],"Box-to-Box",69,78,62,70,72,72),
+  P("Harry Kewell","Leeds","2000s",["WG"],"Winger",72,85,42,74,70,78),
+  P("Mark Viduka","Leeds","2000s",["ST"],"Target Man",74,82,40,72,88,86),
+  P("Alan Smith","Leeds","2000s",["ST"],"Poacher",70,74,58,60,80,72),
+  P("Paul Robinson","Spurs","2000s",["GK"],"Shot Stopper",76,38,84,60,78,36),
+  P("Ledley King","Spurs","2000s",["DF"],"Ball-Playing Defender",74,42,91,70,84,42),
+  P("Michael Dawson","Spurs","2000s",["DF"],"Colossus",74,38,80,58,78,40),
+  P("Stephen Carr","Spurs","2000s",["DF"],"Full-Back Raider",69,58,78,64,74,45),
+  P("Jermaine Jenas","Spurs","2000s",["MF"],"Box-to-Box",71,72,62,74,70,62),
+  P("Tom Huddlestone","Spurs","2000s",["MF"],"Deep-Lying Playmaker",75,55,66,82,76,55),
+  P("Edgar Davids","Spurs","2000s",["MF"],"Destroyer",67,60,80,74,78,48),
+  P("Aaron Lennon","Spurs","2000s",["WG"],"Winger",65,80,45,66,55,58),
+  P("Simon Davies","Spurs","2000s",["WG"],"Winger",70,68,52,68,62,60),
+  P("Robbie Keane","Spurs","2000s",["ST"],"Complete Forward",69,86,42,76,68,87),
+  P("Dimitar Berbatov","Spurs","2000s",["ST"],"Complete Forward",74,87,35,84,74,87),
+  P("Jermain Defoe","Spurs","2000s",["ST"],"Poacher",67,80,35,60,62,85),
+  P("Tim Howard","Everton","2000s",["GK"],"Shot Stopper",75,38,86,62,80,35),
+  P("Leighton Baines","Everton","2000s",["DF"],"Full-Back Raider",67,68,80,80,68,66),
+  P("Joleon Lescott","Everton","2000s",["DF"],"Colossus",74,45,84,60,82,52),
+  P("Phil Jagielka","Everton","2000s",["DF"],"Utility Man",71,40,83,58,78,45),
+  P("Tony Hibbert","Everton","2000s",["DF"],"Destroyer",69,36,74,48,70,35),
+  P("Mikel Arteta","Everton","2000s",["MF"],"Playmaker",69,76,60,86,62,68),
+  P("Tim Cahill","Everton","2000s",["MF","ST"],"Box-to-Box",70,80,60,64,84,82),
+  P("Lee Carsley","Everton","2000s",["MF"],"Destroyer",70,45,80,66,76,45),
+  P("Leon Osman","Everton","2000s",["MF"],"Playmaker",68,68,52,74,52,60),
+  P("Steven Pienaar","Everton","2000s",["WG"],"Inverted Winger",67,74,55,76,58,56),
+  P("Yakubu","Everton","2000s",["ST"],"Poacher",72,78,35,55,84,84),
+  P("Duncan Ferguson","Everton","2000s",["ST"],"Target Man",76,65,45,48,90,72),
+  P("Joe Hart","Man City","2000s",["GK"],"Shot Stopper",77,38,78,58,72,35),
+  P("Richard Dunne","Man City","2000s",["DF"],"Colossus",74,38,85,52,86,38),
+  P("Micah Richards","Man City","2000s",["DF"],"Full-Back Raider",71,55,78,55,88,42),
+  P("Sun Jihai","Man City","2000s",["DF"],"Utility Man",72,50,68,52,66,42),
+  P("Joey Barton","Man City","2000s",["MF"],"Box-to-Box",71,70,66,72,76,60),
+  P("Ali Benarbia","Man City","2000s",["MF"],"Playmaker",68,72,40,84,50,58),
+  P("Elano","Man City","2000s",["MF"],"Playmaker",68,76,40,82,55,74),
+  P("Stephen Ireland","Man City","2000s",["MF"],"Engine",68,76,52,78,60,68),
+  P("Shaun Wright-Phillips","Man City","2000s",["WG"],"Winger",65,82,45,66,58,68),
+  P("Robinho","Man City","2000s",["WG","ST"],"Inverted Winger",68,86,38,76,55,78),
+  P("Shaun Goater","Man City","2000s",["ST"],"Poacher",73,70,38,50,74,76),
+  P("Nicolas Anelka","Man City","2000s",["ST"],"Complete Forward",73,84,35,64,72,84),
+  P("Jussi Jaaskelainen","Bolton","2000s",["GK"],"Shot Stopper",76,38,87,55,78,35),
+  P("Gudni Bergsson","Bolton","2000s",["DF"],"Colossus",73,40,78,55,76,42),
+  P("Tal Ben Haim","Bolton","2000s",["DF"],"Colossus",71,38,76,55,74,36),
+  P("Ricardo Gardner","Bolton","2000s",["WG","DF"],"Winger",69,64,72,66,68,48),
+  P("Bruno N'Gotty","Bolton","2000s",["DF"],"Colossus",73,38,78,58,80,44),
+  P("Jay-Jay Okocha","Bolton","2000s",["MF"],"Playmaker",68,86,45,84,68,72),
+  P("Kevin Nolan","Bolton","2000s",["MF"],"Box-to-Box",72,72,62,66,76,74),
+  P("Ivan Campo","Bolton","2000s",["MF","DF"],"Deep-Lying Playmaker",72,48,76,78,72,45),
+  P("Stelios Giannakopoulos","Bolton","2000s",["WG"],"Winger",68,72,50,64,60,70),
+  P("El Hadji Diouf","Bolton","2000s",["WG","ST"],"Winger",71,74,40,62,68,62),
+  P("Youri Djorkaeff","Bolton","2000s",["ST","MF"],"Playmaker",68,82,40,80,60,80),
+  P("Kevin Davies","Bolton","2000s",["ST"],"Target Man",72,66,55,58,88,68),
+  P("David James","Portsmouth","2000s",["GK"],"Shot Stopper",76,40,88,58,82,35),
+  P("Sylvain Distin","Portsmouth","2000s",["DF"],"Colossus",76,40,84,58,86,38),
+  P("Glen Johnson","Portsmouth","2000s",["DF"],"Full-Back Raider",72,72,76,70,74,50),
+  P("Hermann Hreidarsson","Portsmouth","2000s",["DF"],"Colossus",75,40,76,50,82,42),
+  P("Linvoy Primus","Portsmouth","2000s",["DF"],"Colossus",70,38,76,48,76,38),
+  P("Lassana Diarra","Portsmouth","2000s",["MF"],"Destroyer",68,55,84,74,72,42),
+  P("Sulley Muntari","Portsmouth","2000s",["MF"],"Box-to-Box",70,74,66,74,78,70),
+  P("Niko Kranjcar","Portsmouth","2000s",["MF"],"Playmaker",73,76,45,78,64,68),
+  P("Pedro Mendes","Portsmouth","2000s",["MF"],"Deep-Lying Playmaker",70,62,62,74,60,62),
+  P("Matt Taylor","Portsmouth","2000s",["WG","DF"],"Winger",71,68,58,66,66,70),
+  P("Peter Crouch","Portsmouth","2000s",["ST"],"Target Man",79,74,38,68,74,78),
+  P("Benjani Mwaruwari","Portsmouth","2000s",["ST"],"Engine",74,68,40,52,72,66),
+  P("Edwin van der Sar","Fulham","2000s",["GK"],"Sweeper Keeper",78,42,89,80,82,36),
+  P("Alain Goma","Fulham","2000s",["DF"],"Colossus",72,38,76,55,76,36),
+  P("Zat Knight","Fulham","2000s",["DF"],"Colossus",78,38,72,50,80,38),
+  P("Carlos Bocanegra","Fulham","2000s",["DF"],"Utility Man",72,42,74,52,74,45),
+  P("Moritz Volz","Fulham","2000s",["DF"],"Full-Back Raider",70,52,70,58,66,40),
+  P("Steed Malbranque","Fulham","2000s",["MF"],"Playmaker",68,76,55,78,62,66),
+  P("Papa Bouba Diop","Fulham","2000s",["MF"],"Destroyer",76,58,78,60,86,60),
+  P("Sean Davis","Fulham","2000s",["MF"],"Box-to-Box",70,58,68,66,68,52),
+  P("Sylvain Legwinski","Fulham","2000s",["MF"],"Engine",73,52,66,64,64,45),
+  P("Luis Boa Morte","Fulham","2000s",["WG"],"Winger",69,80,48,62,74,72),
+  P("Louis Saha","Fulham","2000s",["ST"],"Complete Forward",72,82,38,62,78,84),
+  P("Brian McBride","Fulham","2000s",["ST"],"Target Man",73,70,45,55,80,74),
+  P("Joe Hart","Man City","2010s",["GK"],"Shot Stopper",77,38,87,60,84,36),
+  P("Ederson","Man City","2010s",["GK"],"Sweeper Keeper",74,40,88,80,82,38),
+  P("Vincent Kompany","Man City","2010s",["DF"],"Colossus",75,55,93,72,90,58),
+  P("Pablo Zabaleta","Man City","2010s",["DF"],"Full-Back Raider",70,66,82,72,80,52),
+  P("Nicolas Otamendi","Man City","2010s",["DF"],"Ball-Playing Defender",72,48,82,74,84,45),
+  P("Yaya Toure","Man City","2010s",["MF"],"Box-to-Box",74,88,76,86,91,85),
+  P("David Silva","Man City","2010s",["MF"],"Playmaker",67,84,45,94,52,72),
+  P("Kevin De Bruyne","Man City","2010s",["MF"],"Playmaker",71,88,55,94,70,82),
+  P("Fernandinho","Man City","2010s",["MF"],"Destroyer",70,60,86,80,82,55),
+  P("Raheem Sterling","Man City","2010s",["WG","ST"],"Inverted Winger",67,85,45,76,62,80),
+  P("Sergio Aguero","Man City","2010s",["ST"],"Poacher",68,92,38,74,70,95),
+  P("Edin Dzeko","Man City","2010s",["ST"],"Target Man",76,78,42,65,82,82),
+  P("David De Gea","Man United","2010s",["GK"],"Shot Stopper",76,38,92,65,75,36),
+  P("Rio Ferdinand","Man United","2010s",["DF"],"Ball-Playing Defender",74,45,87,76,80,42),
+  P("Nemanja Vidic","Man United","2010s",["DF"],"Colossus",74,42,91,60,92,50),
+  P("Patrice Evra","Man United","2010s",["DF"],"Full-Back Raider",69,66,82,72,78,45),
+  P("Rafael da Silva","Man United","2010s",["DF"],"Full-Back Raider",68,62,74,66,70,42),
+  P("Michael Carrick","Man United","2010s",["MF"],"Deep-Lying Playmaker",73,55,78,88,68,48),
+  P("Paul Scholes","Man United","2010s",["MF"],"Deep-Lying Playmaker",66,68,48,90,52,70),
+  P("Antonio Valencia","Man United","2010s",["WG","DF"],"Winger",70,74,68,72,82,58),
+  P("Nani","Man United","2010s",["WG"],"Winger",69,78,40,74,62,70),
+  P("Wayne Rooney","Man United","2010s",["ST","MF"],"Complete Forward",69,88,55,82,82,88),
+  P("Robin van Persie","Man United","2010s",["ST"],"Complete Forward",72,88,38,78,68,92),
+  P("Javier Hernandez","Man United","2010s",["ST"],"Super-Sub",69,72,35,55,58,84),
+  P("Petr Cech","Chelsea","2010s",["GK"],"Shot Stopper",77,36,91,65,88,35),
+  P("Thibaut Courtois","Chelsea","2010s",["GK"],"Shot Stopper",78,37,89,62,86,35),
+  P("John Terry","Chelsea","2010s",["DF"],"Colossus",74,48,92,70,87,55),
+  P("Branislav Ivanovic","Chelsea","2010s",["DF"],"Utility Man",73,58,85,62,86,62),
+  P("Gary Cahill","Chelsea","2010s",["DF"],"Colossus",74,45,84,58,84,55),
+  P("Cesar Azpilicueta","Chelsea","2010s",["DF"],"Full-Back Raider",70,55,86,72,74,42),
+  P("Nemanja Matic","Chelsea","2010s",["MF"],"Destroyer",76,48,85,78,86,44),
+  P("Cesc Fabregas","Chelsea","2010s",["MF"],"Playmaker",70,76,52,91,60,72),
+  P("Eden Hazard","Chelsea","2010s",["WG","MF"],"Inverted Winger",68,93,40,84,74,84),
+  P("Willian","Chelsea","2010s",["WG"],"Winger",69,78,60,78,66,68),
+  P("Diego Costa","Chelsea","2010s",["ST"],"Complete Forward",73,86,42,62,88,88),
+  P("Didier Drogba","Chelsea","2010s",["ST"],"Target Man",74,82,45,62,88,85),
+  P("Alisson Becker","Liverpool","2010s",["GK"],"Sweeper Keeper",75,40,91,78,84,37),
+  P("Virgil van Dijk","Liverpool","2010s",["DF"],"Colossus",76,52,95,80,90,55),
+  P("Andrew Robertson","Liverpool","2010s",["DF"],"Full-Back Raider",70,76,82,84,76,48),
+  P("Trent Alexander-Arnold","Liverpool","2010s",["DF","MF"],"Full-Back Raider",71,80,72,90,65,55),
+  P("Dejan Lovren","Liverpool","2010s",["DF"],"Colossus",74,42,78,62,82,44),
+  P("Steven Gerrard","Liverpool","2010s",["MF"],"Box-to-Box",72,80,70,87,74,80),
+  P("Jordan Henderson","Liverpool","2010s",["MF"],"Engine",72,66,76,80,80,55),
+  P("Philippe Coutinho","Liverpool","2010s",["MF","WG"],"Playmaker",68,84,42,85,55,80),
+  P("Mohamed Salah","Liverpool","2010s",["WG","ST"],"Inverted Winger",69,92,45,80,72,90),
+  P("Sadio Mane","Liverpool","2010s",["WG","ST"],"Winger",69,89,50,76,76,86),
+  P("Luis Suarez","Liverpool","2010s",["ST"],"Complete Forward",72,94,48,82,78,93),
+  P("Roberto Firmino","Liverpool","2010s",["ST","MF"],"Complete Forward",71,84,65,82,72,78),
+  P("Wojciech Szczesny","Arsenal","2010s",["GK"],"Shot Stopper",77,38,83,60,80,36),
+  P("Laurent Koscielny","Arsenal","2010s",["DF"],"Ball-Playing Defender",73,45,87,74,80,48),
+  P("Per Mertesacker","Arsenal","2010s",["DF"],"Colossus",78,38,82,68,82,40),
+  P("Bacary Sagna","Arsenal","2010s",["DF"],"Full-Back Raider",69,60,83,68,78,40),
+  P("Nacho Monreal","Arsenal","2010s",["DF"],"Full-Back Raider",70,58,80,70,68,42),
+  P("Mesut Ozil","Arsenal","2010s",["MF"],"Playmaker",71,78,38,92,52,65),
+  P("Aaron Ramsey","Arsenal","2010s",["MF"],"Box-to-Box",70,78,66,78,72,76),
+  P("Santi Cazorla","Arsenal","2010s",["MF"],"Deep-Lying Playmaker",66,76,55,88,50,68),
+  P("Alexis Sanchez","Arsenal","2010s",["WG","ST"],"Inverted Winger",67,90,52,78,76,86),
+  P("Theo Walcott","Arsenal","2010s",["WG","ST"],"Winger",69,78,40,66,62,76),
+  P("Olivier Giroud","Arsenal","2010s",["ST"],"Target Man",76,76,45,70,84,82),
+  P("Danny Welbeck","Arsenal","2010s",["ST","WG"],"Utility Man",73,72,55,62,76,65),
+  P("Hugo Lloris","Spurs","2010s",["GK"],"Sweeper Keeper",74,39,89,72,78,36),
+  P("Kyle Walker","Spurs","2010s",["DF"],"Full-Back Raider",70,72,80,72,84,45),
+  P("Danny Rose","Spurs","2010s",["DF"],"Full-Back Raider",68,68,78,68,76,44),
+  P("Jan Vertonghen","Spurs","2010s",["DF"],"Ball-Playing Defender",74,45,87,76,80,46),
+  P("Toby Alderweireld","Spurs","2010s",["DF"],"Ball-Playing Defender",73,42,88,80,78,42),
+  P("Christian Eriksen","Spurs","2010s",["MF"],"Playmaker",72,80,48,90,55,74),
+  P("Mousa Dembele","Spurs","2010s",["MF"],"Engine",73,68,74,82,86,45),
+  P("Dele Alli","Spurs","2010s",["MF"],"Box-to-Box",74,82,55,74,72,78),
+  P("Gareth Bale","Spurs","2010s",["WG","ST"],"Winger",73,90,52,74,82,86),
+  P("Son Heung-min","Spurs","2010s",["WG","ST"],"Inverted Winger",72,86,50,76,68,87),
+  P("Harry Kane","Spurs","2010s",["ST"],"Complete Forward",74,90,45,84,80,93),
+  P("Jermain Defoe","Spurs","2010s",["ST"],"Poacher",67,72,35,58,58,80),
+  P("Kasper Schmeichel","Leicester","2010s",["GK"],"Shot Stopper",73,40,87,68,78,36),
+  P("Robert Huth","Leicester","2010s",["DF"],"Colossus",75,40,84,52,88,52),
+  P("Wes Morgan","Leicester","2010s",["DF"],"Colossus",73,38,82,55,86,46),
+  P("Christian Fuchs","Leicester","2010s",["DF"],"Full-Back Raider",73,55,78,72,76,48),
+  P("Danny Simpson","Leicester","2010s",["DF"],"Utility Man",70,42,74,58,70,36),
+  P("N'Golo Kante","Leicester","2010s",["MF"],"Destroyer",66,55,92,74,80,42),
+  P("Danny Drinkwater","Leicester","2010s",["MF"],"Deep-Lying Playmaker",70,55,72,80,68,48),
+  P("Riyad Mahrez","Leicester","2010s",["WG"],"Inverted Winger",70,89,40,82,55,82),
+  P("Marc Albrighton","Leicester","2010s",["WG"],"Winger",73,68,62,74,65,55),
+  P("Jamie Vardy","Leicester","2010s",["ST"],"Poacher",70,87,48,62,76,90),
+  P("Shinji Okazaki","Leicester","2010s",["ST"],"Engine",68,66,60,58,68,62),
+  P("Leonardo Ulloa","Leicester","2010s",["ST"],"Super-Sub",74,62,45,52,76,70),
+  P("Tim Howard","Everton","2010s",["GK"],"Shot Stopper",75,38,85,58,82,36),
+  P("Jordan Pickford","Everton","2010s",["GK"],"Shot Stopper",73,40,84,74,72,36),
+  P("Leighton Baines","Everton","2010s",["DF"],"Full-Back Raider",67,74,80,82,66,66),
+  P("Phil Jagielka","Everton","2010s",["DF"],"Colossus",71,42,84,60,78,50),
+  P("Seamus Coleman","Everton","2010s",["DF"],"Full-Back Raider",70,72,80,70,74,58),
+  P("Sylvain Distin","Everton","2010s",["DF"],"Colossus",76,36,79,52,86,38),
+  P("Ross Barkley","Everton","2010s",["MF"],"Playmaker",74,78,48,76,76,70),
+  P("Gareth Barry","Everton","2010s",["MF"],"Deep-Lying Playmaker",72,50,76,78,70,45),
+  P("James McCarthy","Everton","2010s",["MF"],"Engine",71,45,76,68,78,40),
+  P("Kevin Mirallas","Everton","2010s",["WG"],"Inverted Winger",70,76,42,68,60,72),
+  P("Romelu Lukaku","Everton","2010s",["ST"],"Complete Forward",75,84,38,64,88,87),
+  P("Steven Naismith","Everton","2010s",["ST","MF"],"Super-Sub",70,64,55,62,62,68),
+  P("Fraser Forster","Southampton","2010s",["GK"],"Shot Stopper",79,36,84,52,84,35),
+  P("Artur Boruc","Southampton","2010s",["GK"],"Shot Stopper",76,37,80,55,78,35),
+  P("Jose Fonte","Southampton","2010s",["DF"],"Colossus",74,42,83,66,80,45),
+  P("Maya Yoshida","Southampton","2010s",["DF"],"Utility Man",74,38,74,62,74,40),
+  P("Ryan Bertrand","Southampton","2010s",["DF"],"Full-Back Raider",70,62,79,68,74,42),
+  P("Nathaniel Clyne","Southampton","2010s",["DF"],"Full-Back Raider",69,60,78,64,72,40),
+  P("Adam Lallana","Southampton","2010s",["MF","WG"],"Playmaker",70,78,55,82,62,66),
+  P("Morgan Schneiderlin","Southampton","2010s",["MF"],"Destroyer",71,48,80,76,76,42),
+  P("James Ward-Prowse","Southampton","2010s",["MF"],"Deep-Lying Playmaker",68,58,62,84,62,70),
+  P("Dusan Tadic","Southampton","2010s",["WG","MF"],"Winger",71,74,42,80,58,66),
+  P("Rickie Lambert","Southampton","2010s",["ST"],"Target Man",74,70,40,70,80,78),
+  P("Graziano Pelle","Southampton","2010s",["ST"],"Target Man",76,68,40,58,82,74),
+  P("Adrian","West Ham","2010s",["GK"],"Shot Stopper",74,40,82,60,76,38),
+  P("Winston Reid","West Ham","2010s",["DF"],"Colossus",75,40,81,58,82,45),
+  P("James Collins","West Ham","2010s",["DF"],"Colossus",74,36,78,50,84,42),
+  P("Aaron Cresswell","West Ham","2010s",["DF"],"Full-Back Raider",67,64,76,74,66,45),
+  P("James Tomkins","West Ham","2010s",["DF"],"Utility Man",75,38,75,56,78,38),
+  P("Mark Noble","West Ham","2010s",["MF"],"Engine",71,58,72,76,70,60),
+  P("Dimitri Payet","West Ham","2010s",["MF","WG"],"Playmaker",69,84,38,88,60,78),
+  P("Cheikhou Kouyate","West Ham","2010s",["MF"],"Box-to-Box",76,60,76,66,84,52),
+  P("Michail Antonio","West Ham","2010s",["WG","ST"],"Winger",71,76,55,58,86,72),
+  P("Matt Jarvis","West Ham","2010s",["WG"],"Winger",70,62,42,66,58,48),
+  P("Andy Carroll","West Ham","2010s",["ST"],"Target Man",76,68,45,55,88,74),
+  P("Diafra Sakho","West Ham","2010s",["ST"],"Poacher",70,68,38,50,72,72),
+  P("Asmir Begovic","Stoke","2010s",["GK"],"Shot Stopper",78,40,86,58,84,40),
+  P("Ryan Shawcross","Stoke","2010s",["DF"],"Colossus",75,38,83,55,86,44),
+  P("Erik Pieters","Stoke","2010s",["DF"],"Full-Back Raider",73,50,76,62,74,36),
+  P("Geoff Cameron","Stoke","2010s",["DF","MF"],"Utility Man",75,44,74,60,76,38),
+  P("Marc Wilson","Stoke","2010s",["DF"],"Utility Man",74,40,70,60,72,36),
+  P("Glenn Whelan","Stoke","2010s",["MF"],"Destroyer",71,42,74,70,72,40),
+  P("Steven Nzonzi","Stoke","2010s",["MF"],"Destroyer",77,50,78,76,82,42),
+  P("Charlie Adam","Stoke","2010s",["MF"],"Deep-Lying Playmaker",73,58,55,80,72,68),
+  P("Marko Arnautovic","Stoke","2010s",["WG","ST"],"Inverted Winger",76,80,40,70,78,74),
+  P("Xherdan Shaqiri","Stoke","2010s",["WG"],"Inverted Winger",67,78,38,76,68,72),
+  P("Peter Crouch","Stoke","2010s",["ST"],"Target Man",79,66,42,62,84,74),
+  P("Jonathan Walters","Stoke","2010s",["ST","WG"],"Engine",72,64,55,58,76,66),
+  P("Michel Vorm","Swansea","2010s",["GK"],"Sweeper Keeper",72,40,84,72,72,36),
+  P("Ashley Williams","Swansea","2010s",["DF"],"Colossus",72,40,84,68,82,42),
+  P("Angel Rangel","Swansea","2010s",["DF"],"Full-Back Raider",71,56,74,68,66,40),
+  P("Neil Taylor","Swansea","2010s",["DF"],"Full-Back Raider",69,48,72,62,66,35),
+  P("Chico Flores","Swansea","2010s",["DF"],"Ball-Playing Defender",72,38,72,68,72,36),
+  P("Leon Britton","Swansea","2010s",["MF"],"Deep-Lying Playmaker",66,44,70,84,52,36),
+  P("Gylfi Sigurdsson","Swansea","2010s",["MF"],"Playmaker",73,76,52,82,64,76),
+  P("Ki Sung-yueng","Swansea","2010s",["MF"],"Deep-Lying Playmaker",74,52,66,79,66,45),
+  P("Wayne Routledge","Swansea","2010s",["WG"],"Winger",66,68,42,64,54,52),
+  P("Nathan Dyer","Swansea","2010s",["WG"],"Winger",65,70,40,62,50,56),
+  P("Michu","Swansea","2010s",["ST","MF"],"Complete Forward",73,76,45,70,68,80),
+  P("Wilfried Bony","Swansea","2010s",["ST"],"Target Man",72,74,40,60,86,78),
+  P("Ederson","Man City","2020s",["GK"],"Sweeper Keeper",74,40,87,80,83,38),
+  P("Kyle Walker","Man City","2020s",["DF"],"Full-Back Raider",72,72,86,74,88,40),
+  P("Ruben Dias","Man City","2020s",["DF"],"Colossus",74,48,92,76,88,44),
+  P("John Stones","Man City","2020s",["DF","MF"],"Ball-Playing Defender",74,62,87,84,80,52),
+  P("Josko Gvardiol","Man City","2020s",["DF"],"Ball-Playing Defender",73,64,84,76,84,60),
+  P("Kevin De Bruyne","Man City","2020s",["MF"],"Playmaker",71,91,58,96,74,84),
+  P("Rodri","Man City","2020s",["MF"],"Deep-Lying Playmaker",75,74,88,91,86,68),
+  P("Bernardo Silva","Man City","2020s",["MF","WG"],"Playmaker",68,84,72,89,66,74),
+  P("Phil Foden","Man City","2020s",["WG","MF"],"Inverted Winger",67,88,55,85,62,85),
+  P("Jack Grealish","Man City","2020s",["WG"],"Winger",69,82,52,82,72,58),
+  P("Erling Haaland","Man City","2020s",["ST"],"Poacher",76,92,42,62,94,96),
+  P("Julian Alvarez","Man City","2020s",["ST","MF"],"Complete Forward",67,80,62,78,68,80),
+  P("Alisson","Liverpool","2020s",["GK"],"Sweeper Keeper",75,40,93,78,86,38),
+  P("Virgil van Dijk","Liverpool","2020s",["DF"],"Colossus",76,55,95,82,92,60),
+  P("Trent Alexander-Arnold","Liverpool","2020s",["DF"],"Full-Back Raider",69,78,74,92,68,62),
+  P("Andrew Robertson","Liverpool","2020s",["DF"],"Full-Back Raider",70,74,82,84,78,52),
+  P("Fabinho","Liverpool","2020s",["MF"],"Destroyer",74,55,87,78,80,50),
+  P("Jordan Henderson","Liverpool","2020s",["MF"],"Engine",72,66,78,82,80,55),
+  P("Thiago Alcantara","Liverpool","2020s",["MF"],"Deep-Lying Playmaker",69,70,68,92,62,52),
+  P("Mohamed Salah","Liverpool","2020s",["WG","ST"],"Inverted Winger",69,93,45,84,78,93),
+  P("Luis Diaz","Liverpool","2020s",["WG"],"Winger",70,84,48,74,72,76),
+  P("Diogo Jota","Liverpool","2020s",["ST","WG"],"Poacher",70,82,50,70,68,86),
+  P("Darwin Nunez","Liverpool","2020s",["ST"],"Target Man",74,80,42,58,86,70),
+  P("Roberto Firmino","Liverpool","2020s",["ST"],"Complete Forward",71,84,62,84,72,80),
+  P("David Raya","Arsenal","2020s",["GK"],"Sweeper Keeper",72,40,86,78,78,36),
+  P("William Saliba","Arsenal","2020s",["DF"],"Colossus",76,50,91,78,88,44),
+  P("Gabriel Magalhaes","Arsenal","2020s",["DF"],"Colossus",75,52,89,70,89,58),
+  P("Ben White","Arsenal","2020s",["DF"],"Ball-Playing Defender",73,62,84,78,74,46),
+  P("Oleksandr Zinchenko","Arsenal","2020s",["DF","MF"],"Utility Man",69,66,74,86,62,48),
+  P("Martin Odegaard","Arsenal","2020s",["MF"],"Playmaker",70,86,58,92,62,76),
+  P("Declan Rice","Arsenal","2020s",["MF"],"Box-to-Box",73,74,88,84,87,66),
+  P("Thomas Partey","Arsenal","2020s",["MF"],"Destroyer",73,60,85,82,84,50),
+  P("Bukayo Saka","Arsenal","2020s",["WG"],"Inverted Winger",70,90,55,85,74,86),
+  P("Gabriel Martinelli","Arsenal","2020s",["WG"],"Winger",70,83,50,74,74,78),
+  P("Gabriel Jesus","Arsenal","2020s",["ST"],"Complete Forward",69,82,60,78,72,76),
+  P("Kai Havertz","Arsenal","2020s",["ST","MF"],"Complete Forward",75,78,58,76,80,74),
+  P("Edouard Mendy","Chelsea","2020s",["GK"],"Shot Stopper",76,38,89,55,86,36),
+  P("Reece James","Chelsea","2020s",["DF"],"Full-Back Raider",71,78,84,84,82,64),
+  P("Thiago Silva","Chelsea","2020s",["DF"],"Ball-Playing Defender",72,55,90,84,76,50),
+  P("Marc Cucurella","Chelsea","2020s",["DF"],"Full-Back Raider",68,62,80,72,74,45),
+  P("Levi Colwill","Chelsea","2020s",["DF"],"Ball-Playing Defender",74,52,80,76,78,44),
+  P("Cole Palmer","Chelsea","2020s",["MF","WG"],"Playmaker",73,88,48,87,64,87),
+  P("Enzo Fernandez","Chelsea","2020s",["MF"],"Deep-Lying Playmaker",70,74,72,87,72,64),
+  P("Moises Caicedo","Chelsea","2020s",["MF"],"Destroyer",70,62,87,78,84,48),
+  P("Mason Mount","Chelsea","2020s",["MF"],"Engine",70,78,62,80,70,70),
+  P("Raheem Sterling","Chelsea","2020s",["WG"],"Winger",67,80,45,74,68,72),
+  P("Nicolas Jackson","Chelsea","2020s",["ST"],"Poacher",73,74,42,58,78,66),
+  P("Timo Werner","Chelsea","2020s",["ST","WG"],"Super-Sub",71,74,44,62,74,58),
+  P("David de Gea","Man United","2020s",["GK"],"Shot Stopper",76,38,90,62,68,36),
+  P("Raphael Varane","Man United","2020s",["DF"],"Colossus",75,48,87,72,84,44),
+  P("Luke Shaw","Man United","2020s",["DF"],"Full-Back Raider",73,68,80,78,78,48),
+  P("Diogo Dalot","Man United","2020s",["DF"],"Full-Back Raider",72,66,76,74,74,50),
+  P("Lisandro Martinez","Man United","2020s",["DF"],"Ball-Playing Defender",69,55,86,80,82,44),
+  P("Bruno Fernandes","Man United","2020s",["MF"],"Playmaker",70,88,55,91,70,82),
+  P("Casemiro","Man United","2020s",["MF"],"Destroyer",73,62,86,78,84,62),
+  P("Scott McTominay","Man United","2020s",["MF"],"Box-to-Box",76,70,72,68,84,72),
+  P("Marcus Rashford","Man United","2020s",["WG","ST"],"Inverted Winger",71,84,45,72,80,82),
+  P("Antony","Man United","2020s",["WG"],"Winger",68,68,42,66,62,55),
+  P("Cristiano Ronaldo","Man United","2020s",["ST"],"Poacher",74,86,38,70,82,93),
+  P("Rasmus Hojlund","Man United","2020s",["ST"],"Target Man",75,72,42,58,80,66),
+  P("Hugo Lloris","Spurs","2020s",["GK"],"Shot Stopper",74,38,87,66,76,36),
+  P("Guglielmo Vicario","Spurs","2020s",["GK"],"Sweeper Keeper",76,40,85,74,72,36),
+  P("Cristian Romero","Spurs","2020s",["DF"],"Colossus",73,55,89,78,84,48),
+  P("Micky van de Ven","Spurs","2020s",["DF"],"Ball-Playing Defender",76,55,85,74,86,44),
+  P("Pedro Porro","Spurs","2020s",["DF"],"Full-Back Raider",69,76,70,82,70,64),
+  P("James Maddison","Spurs","2020s",["MF"],"Playmaker",69,84,48,88,62,76),
+  P("Yves Bissouma","Spurs","2020s",["MF"],"Destroyer",71,58,83,74,80,45),
+  P("Pierre-Emile Hojbjerg","Spurs","2020s",["MF"],"Engine",73,62,80,78,80,52),
+  P("Son Heung-min","Spurs","2020s",["WG","ST"],"Inverted Winger",72,90,48,82,74,91),
+  P("Dejan Kulusevski","Spurs","2020s",["WG","MF"],"Winger",73,80,55,80,80,68),
+  P("Harry Kane","Spurs","2020s",["ST"],"Complete Forward",74,91,48,88,84,94),
+  P("Richarlison","Spurs","2020s",["ST"],"Poacher",72,74,52,62,78,70),
+  P("Nick Pope","Newcastle","2020s",["GK"],"Shot Stopper",75,36,89,48,84,35),
+  P("Kieran Trippier","Newcastle","2020s",["DF"],"Full-Back Raider",68,74,80,87,68,55),
+  P("Sven Botman","Newcastle","2020s",["DF"],"Colossus",77,46,85,74,84,42),
+  P("Fabian Schar","Newcastle","2020s",["DF"],"Ball-Playing Defender",73,60,83,78,78,58),
+  P("Dan Burn","Newcastle","2020s",["DF"],"Colossus",79,45,80,58,86,45),
+  P("Bruno Guimaraes","Newcastle","2020s",["MF"],"Deep-Lying Playmaker",72,78,80,88,78,66),
+  P("Joelinton","Newcastle","2020s",["MF"],"Box-to-Box",73,70,76,72,88,60),
+  P("Sandro Tonali","Newcastle","2020s",["MF"],"Deep-Lying Playmaker",71,72,78,82,76,62),
+  P("Anthony Gordon","Newcastle","2020s",["WG"],"Winger",72,84,50,74,76,76),
+  P("Miguel Almiron","Newcastle","2020s",["WG"],"Winger",69,76,55,68,72,68),
+  P("Alexander Isak","Newcastle","2020s",["ST"],"Complete Forward",76,88,42,74,76,90),
+  P("Callum Wilson","Newcastle","2020s",["ST"],"Poacher",71,74,40,58,70,80),
+  P("Emiliano Martinez","Aston Villa","2020s",["GK"],"Shot Stopper",77,40,90,66,86,38),
+  P("Ezri Konsa","Aston Villa","2020s",["DF"],"Ball-Playing Defender",72,55,84,72,76,42),
+  P("Pau Torres","Aston Villa","2020s",["DF"],"Ball-Playing Defender",75,58,82,84,74,46),
+  P("Matty Cash","Aston Villa","2020s",["DF"],"Full-Back Raider",73,70,76,68,78,58),
+  P("Lucas Digne","Aston Villa","2020s",["DF"],"Full-Back Raider",70,66,76,80,70,48),
+  P("John McGinn","Aston Villa","2020s",["MF"],"Engine",70,76,68,78,84,66),
+  P("Douglas Luiz","Aston Villa","2020s",["MF"],"Deep-Lying Playmaker",69,74,76,84,74,66),
+  P("Boubacar Kamara","Aston Villa","2020s",["MF"],"Destroyer",72,55,82,76,72,42),
+  P("Leon Bailey","Aston Villa","2020s",["WG"],"Winger",70,80,45,70,74,72),
+  P("Ollie Watkins","Aston Villa","2020s",["ST"],"Complete Forward",71,86,50,76,80,87),
+  P("Jhon Duran","Aston Villa","2020s",["ST"],"Super-Sub",73,72,38,55,82,74),
+  P("Danny Ings","Aston Villa","2020s",["ST"],"Poacher",70,68,42,60,66,72),
+  P("Robert Sanchez","Brighton","2020s",["GK"],"Shot Stopper",78,38,82,68,80,36),
+  P("Lewis Dunk","Brighton","2020s",["DF"],"Ball-Playing Defender",76,52,86,78,84,52),
+  P("Adam Webster","Brighton","2020s",["DF"],"Ball-Playing Defender",75,48,78,72,76,44),
+  P("Joel Veltman","Brighton","2020s",["DF"],"Utility Man",72,55,76,70,70,42),
+  P("Pervis Estupinan","Brighton","2020s",["DF"],"Full-Back Raider",69,68,74,74,72,46),
+  P("Alexis Mac Allister","Brighton","2020s",["MF"],"Deep-Lying Playmaker",69,78,72,87,72,70),
+  P("Pascal Gross","Brighton","2020s",["MF"],"Playmaker",71,72,66,84,66,58),
+  P("Adam Lallana","Brighton","2020s",["MF"],"Playmaker",68,66,55,78,58,48),
+  P("Kaoru Mitoma","Brighton","2020s",["WG"],"Winger",70,85,45,74,70,74),
+  P("Solly March","Brighton","2020s",["WG"],"Winger",71,74,60,74,68,64),
+  P("Danny Welbeck","Brighton","2020s",["ST"],"Complete Forward",73,74,55,72,76,70),
+  P("Evan Ferguson","Brighton","2020s",["ST"],"Target Man",72,68,40,56,74,66),
+  P("Lukasz Fabianski","West Ham","2020s",["GK"],"Shot Stopper",75,36,84,60,74,35),
+  P("Kurt Zouma","West Ham","2020s",["DF"],"Colossus",75,45,84,62,88,46),
+  P("Vladimir Coufal","West Ham","2020s",["DF"],"Full-Back Raider",69,62,76,72,72,40),
+  P("Aaron Cresswell","West Ham","2020s",["DF"],"Full-Back Raider",67,62,74,80,62,46),
+  P("Angelo Ogbonna","West Ham","2020s",["DF"],"Colossus",74,44,82,62,82,42),
+  P("Lucas Paqueta","West Ham","2020s",["MF"],"Playmaker",71,82,58,86,74,70),
+  P("Tomas Soucek","West Ham","2020s",["MF"],"Box-to-Box",76,68,76,64,86,70),
+  P("James Ward-Prowse","West Ham","2020s",["MF"],"Playmaker",68,72,66,86,68,72),
+  P("Jarrod Bowen","West Ham","2020s",["WG","ST"],"Inverted Winger",69,85,50,76,74,82),
+  P("Mohammed Kudus","West Ham","2020s",["WG","MF"],"Inverted Winger",70,80,48,74,78,70),
+  P("Michail Antonio","West Ham","2020s",["ST"],"Target Man",71,76,48,62,90,70),
+  P("Gianluca Scamacca","West Ham","2020s",["ST"],"Target Man",77,66,40,58,78,60),
+  P("Vicente Guaita","Crystal Palace","2020s",["GK"],"Shot Stopper",75,36,85,55,76,35),
+  P("Marc Guehi","Crystal Palace","2020s",["DF"],"Ball-Playing Defender",72,52,88,76,80,44),
+  P("Joachim Andersen","Crystal Palace","2020s",["DF"],"Ball-Playing Defender",76,50,82,80,80,42),
+  P("Tyrick Mitchell","Crystal Palace","2020s",["DF"],"Full-Back Raider",69,60,80,68,74,38),
+  P("Joel Ward","Crystal Palace","2020s",["DF"],"Utility Man",70,52,76,62,70,40),
+  P("Eberechi Eze","Crystal Palace","2020s",["MF","WG"],"Playmaker",70,87,45,84,70,80),
+  P("Cheick Doucoure","Crystal Palace","2020s",["MF"],"Destroyer",72,58,80,72,76,42),
+  P("Jeffrey Schlupp","Crystal Palace","2020s",["MF","DF"],"Utility Man",68,64,60,62,74,52),
+  P("Michael Olise","Crystal Palace","2020s",["WG"],"Inverted Winger",73,86,48,84,68,80),
+  P("Wilfried Zaha","Crystal Palace","2020s",["WG"],"Winger",71,84,45,72,80,74),
+  P("Jean-Philippe Mateta","Crystal Palace","2020s",["ST"],"Target Man",76,76,42,60,82,78),
+  P("Odsonne Edouard","Crystal Palace","2020s",["ST"],"Poacher",74,68,40,62,74,66),
+  P("Neto","Bournemouth","2020s",["GK"],"Shot Stopper",75,38,84,66,76,36),
+  P("Illia Zabarnyi","Bournemouth","2020s",["DF"],"Ball-Playing Defender",74,50,82,72,78,40),
+  P("Marcos Senesi","Bournemouth","2020s",["DF"],"Colossus",73,48,80,70,78,44),
+  P("Milos Kerkez","Bournemouth","2020s",["DF"],"Full-Back Raider",69,68,74,70,76,42),
+  P("Adam Smith","Bournemouth","2020s",["DF"],"Utility Man",71,55,72,60,68,38),
+  P("Philip Billing","Bournemouth","2020s",["MF"],"Box-to-Box",76,70,66,68,80,64),
+  P("Jefferson Lerma","Bournemouth","2020s",["MF"],"Destroyer",70,55,80,66,82,48),
+  P("Lewis Cook","Bournemouth","2020s",["MF"],"Deep-Lying Playmaker",69,60,72,78,66,42),
+  P("Justin Kluivert","Bournemouth","2020s",["WG","MF"],"Inverted Winger",68,78,42,72,64,70),
+  P("Antoine Semenyo","Bournemouth","2020s",["WG","ST"],"Winger",73,80,45,68,82,74),
+  P("Dominic Solanke","Bournemouth","2020s",["ST"],"Complete Forward",74,82,52,72,78,83),
+  P("Evanilson","Bournemouth","2020s",["ST"],"Poacher",72,70,44,62,72,70),
+];
+
+// Era attacking inflation — early-PL chaos scored a touch more freely.
+const ERA_PACE = {
+  "1990s": 1.02,
+  "2000s": 1.00,
+  "2010s": 1.01,
+};
+
+// Unique clubs and eras that actually have players.
+const TEAMS = [...new Set(PLAYERS.map((p) => p.t))];
+const DECADES = [...new Set(PLAYERS.map((p) => p.d))].sort();
+
+/* ============================================================================
+ * THE INVINCIBLES — game engine
+ * Seeded RNG, draft pool generation, transparent chemistry, and the
+ * match-by-match season simulation.
+ * ==========================================================================*/
+
+/* ---- Seeded RNG (mulberry32) ----------------------------------------------
+ * Deterministic so a finished season can be re-simulated/shared reliably. */
+function makeRNG(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function hashString(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function shuffle(arr, rng) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ---- Transfer budget ------------------------------------------------------
+ * Budget mode prices each legend off a weighted rating blend; superstars eat
+ * most of a £300M war chest while squad players stay near the £2M minimum. */
+function playerValue(p) {
+  return p.atk * 0.34 + p.def * 0.22 + p.pas * 0.16 + p.phy * 0.12 + p.fin * 0.16;
+}
+function playerCost(p) {
+  const v = playerValue(p);
+  // Steep superstar premium: two marquee signings nearly exhaust the £300M
+  // war chest, so winning spines are built, not stacked.
+  return Math.max(2, Math.round(3 * (1 + Math.pow(Math.max(0, v - 50) / 40, 2.7) * 41))); // £M
+}
+const SALARY_CAP = 300;
+
+/* ---- Spin: roll a random era + club and offer that squad ------------------
+ * Every eligible club-era is equally likely (uniform pick — no weighting),
+ * and a club-era already dealt earlier in the same game is never dealt
+ * again. A player can only be signed once, so all era-versions of a
+ * signed name are removed from the pool. */
+function availableCombos(state) {
+  const taken = new Set(state.roster.filter(Boolean).map((r) => r.player.n));
+  const map = new Map();
+  for (const p of PLAYERS) {
+    if (taken.has(p.n)) continue;
+    const key = p.d + "|" + p.t;
+    if (!map.has(key)) map.set(key, { decade: p.d, team: p.t, candidates: [] });
+    map.get(key).candidates.push(p);
+  }
+  return [...map.values()];
+}
+
+function spinPool(state) {
+  const all = availableCombos(state);
+  // Prefer deep, believable squads. Step the bar down only if a draft has
+  // thinned the pool late on.
+  let combos =
+    all.filter((c) => c.candidates.length >= 8);
+  if (!combos.length) combos = all.filter((c) => c.candidates.length >= 5);
+  if (!combos.length) combos = all.filter((c) => c.candidates.length >= 3);
+  if (!combos.length) combos = all;
+
+  // Budget mode: prefer club-eras with at least one candidate the remaining
+  // budget can afford (£2M reserved per other open slot). Fall back to
+  // unfiltered rather than deadlock the draft.
+  if (state.mode === "cap") {
+    const budget = SALARY_CAP - state.spent - (5 - state.pick - 1) * 2;
+    const affordable = combos.filter((c) => c.candidates.some((p) => playerCost(p) <= budget));
+    if (affordable.length) combos = affordable;
+  }
+
+  // Never deal a club-era already dealt this game, and (endless mode) avoid
+  // ones dealt in the last few games too — repeats feel like a broken slot
+  // machine. Relax the cross-game rule first if the pool runs dry.
+  const recent = state.recent || [];
+  const block = state.blocklist || [];
+  const key = (c) => c.decade + "|" + c.team;
+  let fresh = combos.filter((c) => !recent.includes(key(c)) && !block.includes(key(c)));
+  if (!fresh.length) fresh = combos.filter((c) => !recent.includes(key(c)));
+  if (fresh.length) combos = fresh;
+
+  // Uniform pick — every eligible club-era is equally likely.
+  const chosen = combos[Math.floor(state.rng() * combos.length)];
+  state.recent = [...recent, chosen.decade + "|" + chosen.team];
+  return {
+    decade: chosen.decade,
+    team: chosen.team,
+    candidates: shuffle(chosen.candidates, state.rng),
+  };
+}
+
+/* ---- Position fit ---------------------------------------------------------
+ * Players placed off their natural role lose some effectiveness. */
+function positionFit(player, pos) {
+  if (player.p[0] === pos) return 1.0; // primary role
+  if (player.p.includes(pos)) return 0.94; // secondary role
+  // The keeper rule dominates the spectrum: outfielders in goal is a
+  // catastrophe (and a keeper outfield is no better).
+  if (pos === "GK" || player.p.includes("GK")) return 0.55;
+  // Off-position: how far away on the DF..ST spectrum?
+  const idx = (x) => POSITIONS.indexOf(x);
+  const dist = Math.min(...player.p.map((np) => Math.abs(idx(np) - idx(pos))));
+  return Math.max(0.74, 1.0 - dist * 0.09);
+}
+
+function adjustedPlayer(slot) {
+  const { player, pos } = slot;
+  const fit = positionFit(player, pos);
+  const pace = ERA_PACE[player.d] || 1.0;
+  return {
+    name: player.n,
+    pos,
+    fit,
+    atk: player.atk * fit * pace,
+    def: player.def * fit,
+    pas: player.pas * fit,
+    phy: player.phy * fit,
+    fin: player.fin,
+    raw: player,
+  };
+}
+
+/* ---- Transparent chemistry ------------------------------------------------
+ * Returns { mult, breakdown:[{label, delta, kind}] } where mult multiplies
+ * overall team strength. Everything here is shown to the player. */
+function computeChemistry(slots) {
+  const ap = slots.map(adjustedPlayer);
+  const breakdown = [];
+  const add = (label, delta) =>
+    breakdown.push({ label, delta, kind: delta >= 0 ? "good" : "bad" });
+
+  // Role coverage — reward a true five-role spine.
+  const distinctNatural = new Set();
+  ap.forEach((p) => {
+    if (p.raw.p[0] === p.pos) distinctNatural.add(p.pos);
+  });
+  if (distinctNatural.size === 5) add("Balanced spine — every role is a natural fit", 0.05);
+
+  // Off-position penalties.
+  const offPos = ap.filter((p) => p.fit < 0.95);
+  if (offPos.length)
+    add(`${offPos.length} player(s) out of position`, -0.03 * offPos.length);
+
+  // Cutting edge — someone has to put the chances away.
+  const finishers = ap.filter((p) => p.fin >= 80).length;
+  if (finishers >= 2) add(`Clinical edge (${finishers} finishers)`, 0.05);
+  else if (finishers === 0) add("No cutting edge — blunt in front of goal", -0.08);
+
+  // Chief creator.
+  const bestPas = Math.max(...ap.map((p) => p.pas));
+  if (bestPas >= 90) add("Elite creator pulls the strings", 0.05);
+  else if (bestPas < 74) add("No creator — sterile possession", -0.06);
+
+  // Defensive anchor.
+  const anchor = ap.some((p) => (p.pos === "GK" || p.pos === "DF") && p.def >= 86);
+  if (anchor) add("Commanding presence anchors the back line", 0.05);
+  else add("No defensive anchor — soft at the back", -0.05);
+
+  // Usage clash — too many individualists.
+  const highUsage = ap.filter((p) => p.atk >= 88 && p.pas < 80).length;
+  if (highUsage >= 4) add("Too many individualists — only one ball", -0.07);
+  else if (highUsage === 3) add("Everyone wants the last shot", -0.02);
+
+  // Two-way engines bonus.
+  const engines = ap.filter((p) => p.atk >= 78 && p.def >= 84).length;
+  if (engines >= 2) add(`Box-to-box engines (${engines} complete players)`, 0.04);
+
+  // Era cohesion — same-era cores gel; five different eras takes time.
+  const decades = ap.map((p) => p.raw.d);
+  const counts = {};
+  decades.forEach((d) => (counts[d] = (counts[d] || 0) + 1));
+  const topEra = Math.max(...Object.values(counts));
+  if (topEra >= 3) add("Same-era core — instant chemistry", 0.04);
+  else if (new Set(decades).size === 5) add("Five different eras — slow to gel", -0.04);
+
+  const sum = breakdown.reduce((s, b) => s + b.delta, 0);
+  const mult = Math.max(0.78, Math.min(1.14, 1 + sum));
+  return { mult, breakdown };
+}
+
+/* ---- Team strength categories --------------------------------------------*/
+function teamMetrics(slots) {
+  const ap = slots.map(adjustedPlayer);
+  const avg = (k) => ap.reduce((s, p) => s + p[k], 0) / ap.length;
+  const bestPas = Math.max(...ap.map((p) => p.pas));
+
+  const attack = avg("atk") * 0.55 + bestPas * 0.20 + avg("fin") * 0.25;
+  const defense = avg("def") * 0.72 + avg("phy") * 0.28; // GK's def IS shot-stopping
+  const creativity = bestPas * 0.6 + avg("pas") * 0.4;
+  const physical = avg("phy");
+  const finishing = avg("fin");
+
+  return { attack, defense, creativity, physical, finishing, ap };
+}
+
+/* ---- Per-match win probability -------------------------------------------*/
+function baseWinProb(metrics, chemMult) {
+  const overall = (metrics.attack * 0.5 + metrics.defense * 0.5) * chemMult;
+  // Tuned so a curated all-time spine averages ~92-100 pts, and draws make a
+  // literal 38-0-0 brutally rare even for that side.
+  const LEAGUE = 75.5;
+  const SCALE = 5.2;
+  const p = 1 / (1 + Math.exp(-(overall - LEAGUE) / SCALE));
+  return Math.max(0.06, Math.min(0.985, p));
+}
+
+// Draw band shrinks as the favourite strengthens — but even giants get pegged
+// back at least 10% of the time.
+function drawProb(p) {
+  return Math.max(0.10, Math.min(0.30, 0.26 - (p - 0.5) * 0.25));
+}
+
+/* ---- Simulate a 38-match season with unbeaten-run momentum ---------------*/
+function simulateSeason(slots, seed) {
+  const metrics = teamMetrics(slots);
+  const chem = computeChemistry(slots);
+  const p0 = baseWinProb(metrics, chem.mult);
+  const rng = makeRNG(seed ^ 0x9e3779b9);
+
+  const games = [];
+  let w = 0,
+    d = 0,
+    l = 0,
+    streak = 0, // unbeaten (W/D) run; negative while losing
+    longestUnbeaten = 0,
+    run = 0;
+
+  for (let g = 0; g < 38; g++) {
+    // Momentum: confidence rides an unbeaten run (and dips on a skid). Kept
+    // small so it adds drama without turning an invincible season into a
+    // coin flip.
+    const momentum = Math.max(-0.02, Math.min(0.012, streak * 0.002));
+    const p = Math.max(0.04, Math.min(0.99, p0 + momentum));
+    const pd = drawProb(p);
+    const roll = rng();
+    const res = roll < p * (1 - pd) ? "W" : roll < p * (1 - pd) + pd ? "D" : "L";
+    if (res === "L") {
+      l++;
+      streak = streak <= 0 ? streak - 1 : -1;
+      run = 0;
+    } else {
+      if (res === "W") w++;
+      else d++;
+      streak = streak >= 0 ? streak + 1 : 1;
+      run++;
+      longestUnbeaten = Math.max(longestUnbeaten, run);
+    }
+    games.push(res);
+  }
+  const pts = 3 * w + d;
+
+  // Player of the Season — biggest all-around contribution.
+  const contrib = metrics.ap.map((p) => ({
+    name: p.name,
+    pos: p.pos,
+    score: p.atk * 0.4 + p.def * 0.25 + p.pas * 0.2 + p.phy * 0.15,
+  }));
+  contrib.sort((a, b) => b.score - a.score);
+
+  // Weakness — lowest category relative to a soft baseline.
+  const cats = [
+    ["Attack", metrics.attack, 78],
+    ["Defence", metrics.defense, 78],
+    ["Creativity", metrics.creativity, 84],
+    ["Physicality", metrics.physical, 80],
+    ["Finishing", metrics.finishing, 68],
+  ];
+  cats.sort((a, b) => a[1] - a[2] - (b[1] - b[2]));
+  const weakness = cats[0][0];
+
+  return {
+    w,
+    d,
+    l,
+    pts,
+    games,
+    longestUnbeaten,
+    perGame: p0,
+    chem,
+    metrics,
+    overall: (metrics.attack * 0.5 + metrics.defense * 0.5) * chem.mult,
+    mvp: contrib[0],
+    weakness,
+    grade: gradeFor(pts),
+  };
+}
+
+function gradeFor(pts) {
+  if (pts === 114) return { letter: "38-0", title: "INVINCIBLE", cls: "perfect" };
+  if (pts >= 95) return { letter: "S", title: "Champions", cls: "s" };
+  if (pts >= 84) return { letter: "A", title: "Title Contender", cls: "a" };
+  if (pts >= 71) return { letter: "B", title: "Top Four", cls: "b" };
+  if (pts >= 58) return { letter: "C", title: "Europa Chase", cls: "c" };
+  if (pts >= 45) return { letter: "D", title: "Mid-table", cls: "d" };
+  if (pts >= 35) return { letter: "E", title: "Relegation Scrap", cls: "e" };
+  return { letter: "F", title: "Going Down", cls: "f" };
+}
+
+/* ---- European Cup ----------------------------------------------------------
+ * Your points total sets your seed; you then run four single-match knockout
+ * rounds against progressively tougher opponents. A high seed earns a kinder
+ * draw. Win all four for the trophy. */
+function seedForPts(pts) {
+  if (pts >= 95) return 1;
+  if (pts >= 90) return 2;
+  if (pts >= 86) return 3;
+  if (pts >= 82) return 4;
+  if (pts >= 76) return 5;
+  if (pts >= 68) return 6;
+  if (pts >= 60) return 7;
+  if (pts >= 52) return 8;
+  return 0; // missed Europe
+}
+
+const CUP_ROUNDS = [
+  { name: "Round of 16", opp: "the Cup Upstarts", oppOverall: 86 },
+  { name: "Quarter-final", opp: "a Domestic Rival", oppOverall: 90 },
+  { name: "Semi-final", opp: "the Continental Elite", oppOverall: 94 },
+  { name: "Final", opp: "the European Champions", oppOverall: 98 },
+];
+
+// A scoreline consistent with the result; pens shown e.g. "1–1 (4–2 pens)".
+function scorelineFor(won, pens, rng) {
+  const pick = (arr) => arr[Math.floor(rng() * arr.length)];
+  if (pens) {
+    const level = pick(["0–0", "1–1", "2–2"]);
+    const so = pick([[4, 2], [4, 3], [5, 4], [3, 2]]);
+    return `${level} (${won ? so[0] : so[1]}–${won ? so[1] : so[0]} pens)`;
+  }
+  const s = pick([[2, 0], [2, 1], [3, 1], [1, 0]]);
+  return won ? `${s[0]}–${s[1]}` : `${s[1]}–${s[0]}`;
+}
+
+function simulateCup(result, seed, baseSeed) {
+  const rng = makeRNG(baseSeed ^ 0x51ed270b);
+  const homeAdv = (4.5 - seed) * 0.008; // +/- ~0.03 per match by seed
+  const rounds = [];
+  let champion = true;
+  let exitRound = null;
+
+  for (let i = 0; i < CUP_ROUNDS.length; i++) {
+    const R = CUP_ROUNDS[i];
+    let p = 1 / (1 + Math.exp(-(result.overall - R.oppOverall) / 5.2)) + homeAdv;
+    p = Math.max(0.08, Math.min(0.93, p));
+    const pd = drawProb(p);
+    const roll = rng();
+    let won;
+    let pens = false;
+    if (roll < p * (1 - pd)) won = true;
+    else if (roll < p * (1 - pd) + pd) {
+      // Level after 120 minutes — penalties decide it.
+      pens = true;
+      const pPens = Math.max(0.25, Math.min(0.75, 0.5 + (result.overall - R.oppOverall) / 60));
+      won = rng() < pPens;
+    } else won = false;
+    const score = scorelineFor(won, pens, rng);
+    rounds.push({ name: R.name, opp: R.opp, won, pens, score });
+    if (!won) {
+      champion = false;
+      exitRound = R.name;
+      break;
+    }
+  }
+  return { seed, rounds, champion, exitRound };
+}
+
+/* ============================================================================
+ * THE INVINCIBLES — UI controller / game state machine
+ * ==========================================================================*/
+(function () {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+  const STORE_KEY = "invincibles.v1";
+
+  // -------- persistent records --------
+  function loadStore() {
+    try {
+      return JSON.parse(localStorage.getItem(STORE_KEY)) || {};
+    } catch {
+      return {};
+    }
+  }
+  function saveStore(s) {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(s));
+    } catch {}
+  }
+
+  // -------- high-score board --------
+  // Top-10 seasons, ranked by points, then longest unbeaten run, then trophy.
+  const HS_MAX = 10;
+  function sortScores(a, b) {
+    return b.pts - a.pts || b.streak - a.streak || (b.ring ? 1 : 0) - (a.ring ? 1 : 0) || a.ts - b.ts;
+  }
+  // Two device-local boards: classic (endless) runs in store.scores, Transfer
+  // Budget runs in store.scoresCap. board is "cap" | "classic".
+  function getScores(store, board) {
+    const list = board === "cap" ? store.scoresCap : store.scores;
+    return Array.isArray(list) ? list.slice().sort(sortScores) : [];
+  }
+  function scoreQualifies(scores, pts, streak) {
+    if (scores.length < HS_MAX) return true;
+    const worst = scores[scores.length - 1];
+    return pts > worst.pts || (pts === worst.pts && streak > worst.streak);
+  }
+
+  // -------- global leaderboard (optional backend) --------
+  // Backed by /api/scores when the game is hosted on Vercel with a Redis
+  // store attached (see README). Anywhere else (GitHub Pages, a local file)
+  // the fetch fails silently and only the device-local board is shown.
+  // On GitHub Pages (no serverless functions) the board lives on the Vercel
+  // deployment — point at it cross-origin; the API sends open CORS headers.
+  const API_BASE = location.hostname.endsWith("github.io")
+    ? "https://todolist-theta-pink-34.vercel.app"
+    : "";
+  // Per-board global state: null = unknown/unavailable; [] = live but empty.
+  // Server board names keyed by the local tab id.
+  const API_BOARD = { classic: "soccer", cap: "soccer-cap" };
+  const globalScores = { classic: null, cap: null };
+  let globalStatus = null; // "unconfigured" = API answered 503 (no Redis store yet)
+  function fetchGlobalBoard(board) {
+    fetch(API_BASE + "/api/scores?board=" + API_BOARD[board], { cache: "no-store" })
+      .then((r) => {
+        if (r.status === 503) {
+          globalStatus = "unconfigured";
+          renderBoards();
+          return null;
+        }
+        return r.ok ? r.json() : null;
+      })
+      .then((data) => {
+        if (data && Array.isArray(data.scores)) {
+          globalScores[board] = data.scores;
+          globalStatus = "ok";
+          renderBoards();
+        }
+      })
+      .catch(() => {});
+  }
+  function fetchGlobalScores() {
+    try {
+      fetchGlobalBoard("classic");
+      fetchGlobalBoard("cap");
+    } catch {}
+  }
+  function submitGlobalScore(entry, board) {
+    try {
+      fetch(API_BASE + "/api/scores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(Object.assign({}, entry, { board: API_BOARD[board] })),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data && Array.isArray(data.scores)) {
+            globalScores[board] = data.scores;
+            renderBoards();
+          }
+        })
+        .catch(() => {});
+    } catch {}
+  }
+  function saveHighScore() {
+    if (!state || !state.result || state.scoreTs) return;
+    const ini =
+      $("hs-initials").value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3) || "AAA";
+    const r = state.result;
+    const store = loadStore();
+    const entry = {
+      ini,
+      wins: r.w,
+      draws: r.d,
+      losses: r.l,
+      pts: r.pts,
+      streak: r.longestUnbeaten,
+      ring: !!(state.playoffs && state.playoffs.champion),
+      mode: state.mode,
+      ts: Date.now(),
+    };
+    const board = state.mode === "cap" ? "cap" : "classic";
+    const scores = getScores(store, board);
+    scores.push(entry);
+    scores.sort(sortScores);
+    const kept = scores.slice(0, HS_MAX);
+    if (board === "cap") store.scoresCap = kept;
+    else store.scores = kept;
+    store.lastIni = ini;
+    saveStore(store);
+    submitGlobalScore(entry, board);
+    const rank = kept.indexOf(entry) + 1;
+    state.scoreTs = rank > 0 ? entry.ts : null;
+    $("hs-entry-title").textContent =
+      rank > 0 ? `Saved — ${ini} is #${rank} on the board! 🏅` : "Saved!";
+    $("hs-entry-row").hidden = true;
+  }
+
+  // -------- screen routing --------
+  function show(id) {
+    document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+    $(id).classList.add("active");
+  }
+
+  // ====================== game state ======================
+  let state = null;
+
+  function newGame(mode) {
+    const seedStr = mode + ":" + Date.now() + ":" + Math.random();
+    const seed = hashString(seedStr);
+    state = {
+      mode, // "endless" | "cap"
+      seedStr,
+      seed,
+      rng: makeRNG(seed),
+      roster: [null, null, null, null, null], // indexed by POSITIONS
+      pick: 0,
+      rerolls: 3,
+      wild: 1,
+      recent: [], // every club-era key dealt this game — never repeated
+      // Also avoid club-eras dealt in recent games (persisted history).
+      blocklist: loadStore().recentDeals || [],
+      scoreTs: null, // this season's high-score entry id, if saved
+      current: null, // { decade, team, candidates }
+      openPos: null, // currently expanded card index
+      pro: !!$("pro-toggle").checked, // Pro Scout Mode hides stats
+    };
+    if (mode === "cap") state.spent = 0;
+    dealNext();
+    renderDraft(true);
+    show("screen-draft");
+  }
+
+  // Spin, and remember the deal across games so the same club-era can't
+  // come up again for roughly three full drafts.
+  function dealNext() {
+    state.current = spinPool(state);
+    const s = loadStore();
+    const key = state.current.decade + "|" + state.current.team;
+    s.recentDeals = [...(s.recentDeals || []).filter((k) => k !== key), key].slice(-40);
+    saveStore(s);
+  }
+
+  function openSlots() {
+    return POSITIONS.map((p, i) => (state.roster[i] ? null : i)).filter((i) => i !== null);
+  }
+
+  // Budget mode: what's left, and the most a single signing can cost after
+  // reserving the £2M minimum for every other open slot.
+  function capLeft() {
+    return SALARY_CAP - state.spent;
+  }
+  function maxAffordable() {
+    return capLeft() - (openSlots().length - 1) * 2;
+  }
+
+  // ====================== draft rendering ======================
+  function renderCourt(targetIdxs) {
+    const court = $("court");
+    court.innerHTML = "";
+    POSITIONS.forEach((pos, i) => {
+      const slot = document.createElement("div");
+      slot.className = "slot";
+      const r = state.roster[i];
+      if (r) {
+        slot.classList.add("filled");
+        slot.innerHTML = `<span class="slot-pos">${pos}</span>
+          <span class="slot-name">${r.player.n}</span>
+          <span class="slot-era">${r.player.d}</span>`;
+      } else {
+        // Highlight eligible slots only when the hint means something — with
+        // every slot open, a universal glow conveys nothing.
+        if (targetIdxs && targetIdxs.includes(i) && targetIdxs.length < 5) slot.classList.add("target");
+        slot.innerHTML = `<span class="slot-pos">${pos}</span><span class="slot-empty">open</span>`;
+      }
+      court.appendChild(slot);
+    });
+  }
+
+  function ratingCell(key, label, val) {
+    const cls = val >= 86 ? "hi" : val < 68 ? "lo" : "";
+    return `<div class="rbar"><span class="rk">${label}</span><span class="rv ${cls}">${Math.round(val)}</span></div>`;
+  }
+
+  function candidateCard(player) {
+    const open = openSlots();
+    const card = document.createElement("div");
+    card.className = "pcard";
+    const cap = state.mode === "cap";
+    const tooRich = cap && playerCost(player) > maxAffordable();
+    if (tooRich) card.classList.add("too-rich");
+    // Pro Scout Mode: hide ratings AND the archetype — you draft on
+    // name, club, era, position and listed height alone.
+    const meta = state.pro
+      ? `${formatHeight(player.hi)} · ${player.t} · ${player.d}`
+      : `${formatHeight(player.hi)} · ${player.t} · ${player.d} · <span class="pcard-arch">${player.a}</span>`;
+    const body = state.pro
+      ? `<div class="scout-note">🕶️ Scout's report only — trust your eye.</div>`
+      : `<div class="ratings">
+        ${ratingCell("atk", "ATT", player.atk)}
+        ${ratingCell("def", "DEF", player.def)}
+        ${ratingCell("pas", "PAS", player.pas)}
+        ${ratingCell("phy", "PHY", player.phy)}
+        ${ratingCell("fin", "FIN", player.fin)}
+      </div>`;
+    card.innerHTML = `
+      <div class="pcard-top">
+        <div>
+          <div class="pcard-name">${player.n}</div>
+          <div class="pcard-meta">${meta}</div>
+        </div>
+        <div class="pcard-pos">${player.p.map((p) => `<span class="pos-pill">${p}</span>`).join("")}${cap ? `<span class="pcost">£${playerCost(player)}M</span>` : ""}</div>
+      </div>
+      ${body}
+      <div class="pos-choose">
+        ${POSITIONS.map((pos, i) => {
+          const filled = !!state.roster[i];
+          const natural = player.p.includes(pos);
+          const cls = natural ? "natural" : "off";
+          return `<button class="pc-btn ${cls}" data-pos="${i}" ${filled ? "disabled" : ""}>${pos}</button>`;
+        }).join("")}
+      </div>`;
+
+    card.querySelector(".pcard-top").addEventListener("click", () => {
+      const wasOpen = card.classList.contains("open");
+      document.querySelectorAll(".pcard.open").forEach((c) => c.classList.remove("open"));
+      if (!wasOpen) {
+        card.classList.add("open");
+        renderCourt(open); // highlight where they can go
+      } else {
+        renderCourt();
+      }
+    });
+
+    card.querySelectorAll(".pc-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const idx = parseInt(btn.dataset.pos, 10);
+        if (state.roster[idx]) return;
+        draftPlayer(player, idx);
+      });
+    });
+
+    return card;
+  }
+
+  function renderCandidates() {
+    const wrap = $("candidates");
+    wrap.innerHTML = "";
+    state.current.candidates.forEach((p) => wrap.appendChild(candidateCard(p)));
+  }
+
+  function renderTokens() {
+    const done = state.pick >= 5;
+    $("reroll-count").textContent = state.rerolls;
+    $("wild-count").textContent = state.wild;
+    $("btn-reroll").disabled = $("token-reroll").disabled = done || state.rerolls <= 0;
+    $("btn-wild").disabled = $("token-wild").disabled = done || state.wild <= 0;
+    $("pick-label").textContent = `Signing ${Math.min(state.pick + 1, 5)} / 5`;
+    $("btn-sim").textContent = state.pick < 5 ? "🔒 Sign 5 players to simulate" : "Simulate Season";
+    const hud = $("budget-hud");
+    hud.hidden = state.mode !== "cap";
+    if (state.mode === "cap") hud.innerHTML = `💰 <b>£${capLeft()}M</b>`;
+  }
+
+  function renderDraft(animate) {
+    renderCourt();
+    renderTokens();
+    $("btn-sim").disabled = state.pick < 5;
+    $("spinner-label").textContent =
+      state.mode === "cap" ? "TRANSFER BUDGET DRAFT" : "NOW SIGNING";
+    const label = `${state.current.decade} · ${state.current.team}`;
+    if (animate) {
+      animateSpin(() => {
+        $("spinner-team").textContent = label;
+        renderCandidates();
+      });
+    } else {
+      $("spinner-team").textContent = label;
+      renderCandidates();
+    }
+  }
+
+  function animateSpin(done) {
+    const spinner = $("spinner");
+    const teamEl = $("spinner-team");
+    spinner.classList.add("spinning");
+    let ticks = 0;
+    const iv = setInterval(() => {
+      const d = DECADES[Math.floor(Math.random() * DECADES.length)];
+      const t = TEAMS[Math.floor(Math.random() * TEAMS.length)];
+      teamEl.textContent = `${d} · ${t}`;
+      if (++ticks > 10) {
+        clearInterval(iv);
+        spinner.classList.remove("spinning");
+        done();
+      }
+    }, 70);
+  }
+
+  // ====================== draft actions ======================
+  function draftPlayer(player, posIdx) {
+    if (state.mode === "cap") {
+      const cost = playerCost(player);
+      if (cost > maxAffordable()) return; // can't fit under the cap
+      state.spent += cost;
+    }
+    state.roster[posIdx] = { player, pos: POSITIONS[posIdx] };
+    state.pick++;
+    if (state.pick >= 5) {
+      renderCourt();
+      renderTokens();
+      $("candidates").innerHTML = "";
+      $("spinner-team").textContent = "Spine complete!";
+      $("btn-sim").disabled = false;
+      $("btn-reroll").disabled = true;
+      $("btn-wild").disabled = true;
+    } else {
+      dealNext();
+      renderDraft(true);
+    }
+  }
+
+  function reroll() {
+    if (state.rerolls <= 0 || state.pick >= 5) return;
+    state.rerolls--;
+    dealNext();
+    renderDraft(true);
+  }
+
+  // ---- wildcard ----
+  function openWild() {
+    if (state.wild <= 0 || state.pick >= 5) return;
+    renderWildList("");
+    $("wild-search").value = "";
+    show("screen-wild");
+    setTimeout(() => $("wild-search").focus(), 100);
+  }
+
+  function renderWildList(query) {
+    const taken = new Set(state.roster.filter(Boolean).map((r) => r.player.n));
+    const q = query.trim().toLowerCase();
+    const list = PLAYERS.filter(
+      (p) => !taken.has(p.n) && (!q || p.n.toLowerCase().includes(q) || p.t.toLowerCase().includes(q))
+    ).sort((a, b) => b.atk + b.def - (a.atk + a.def));
+
+    const wrap = $("wild-list");
+    wrap.innerHTML = "";
+    list.forEach((player) => {
+      const card = candidateCard(player);
+      // In wildcard mode, picking spends the token and closes the picker.
+      // Clone each button to strip the default draft handler, then re-bind.
+      card.querySelectorAll(".pc-btn").forEach((btn) => {
+        btn.replaceWith(btn.cloneNode(true));
+      });
+      card.querySelectorAll(".pc-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = parseInt(btn.dataset.pos, 10);
+          if (state.roster[idx]) return;
+          // Don't burn the token on a pick draftPlayer would refuse.
+          if (state.mode === "cap" && playerCost(player) > maxAffordable()) return;
+          state.wild--;
+          draftPlayer(player, idx);
+          show("screen-draft");
+        });
+      });
+      wrap.appendChild(card);
+    });
+    if (!list.length) wrap.innerHTML = `<p style="color:var(--muted);text-align:center">No legends match.</p>`;
+  }
+
+  // ====================== simulation ======================
+  function runSimulation() {
+    const slots = state.roster.filter(Boolean);
+    const result = simulateSeason(slots, state.seed);
+    state.result = result;
+    show("screen-sim");
+
+    // build empty grid
+    const grid = $("sim-grid");
+    grid.innerHTML = "";
+    const cells = [];
+    for (let i = 0; i < 38; i++) {
+      const c = document.createElement("div");
+      c.className = "gcell";
+      grid.appendChild(c);
+      cells.push(c);
+    }
+    $("sim-bar-fill").style.width = "0%";
+    $("sim-wins").textContent = "0";
+    $("sim-draws").textContent = "0";
+    $("sim-losses").textContent = "0";
+    $("sim-pts").textContent = "0";
+
+    let w = 0,
+      d = 0,
+      l = 0,
+      i = 0;
+    const total = result.games.length;
+    const statuses = ["Kickoff…", "Autumn form…", "Festive fixture pile-up…", "Spring title race…", "Run-in…"];
+
+    const iv = setInterval(() => {
+      const res = result.games[i];
+      const cell = cells[i];
+      cell.classList.add("show", res === "W" ? "w" : res === "D" ? "d" : "l");
+      if (res === "W") w++;
+      else if (res === "D") d++;
+      else l++;
+      const pts = 3 * w + d;
+      $("sim-wins").textContent = w;
+      $("sim-draws").textContent = d;
+      $("sim-losses").textContent = l;
+      $("sim-pts").textContent = pts;
+      $("sim-bar-fill").style.width = (pts / (total * 3)) * 100 + "%";
+      $("sim-status").textContent = statuses[Math.min(statuses.length - 1, Math.floor((i / total) * statuses.length))];
+      i++;
+      if (i >= total) {
+        clearInterval(iv);
+        setTimeout(showResult, 650);
+      }
+    }, 45);
+  }
+
+  // ====================== results ======================
+  function fitEmoji(fit) {
+    if (fit >= 1.0) return "🟢";
+    if (fit >= 0.94) return "🟡";
+    return "🔴";
+  }
+
+  function showResult() {
+    const r = state.result;
+    const slots = state.roster.filter(Boolean);
+
+    // records
+    const store = loadStore();
+    store.bestPts = Math.max(store.bestPts || 0, r.pts);
+    if (r.l === 0) store.perfects = (store.perfects || 0) + 1;
+    store.played = (store.played || 0) + 1;
+    saveStore(store);
+
+    // High-score board — offer the initials entry if this season makes the cut.
+    state.scoreTs = null;
+    const board = state.mode === "cap" ? "cap" : "classic";
+    const qualifies = scoreQualifies(getScores(store, board), r.pts, r.longestUnbeaten);
+    $("hs-entry").hidden = !qualifies;
+    if (qualifies) {
+      $("hs-entry-title").textContent =
+        board === "cap"
+          ? "🏅 Top-10 budget season! Enter your initials"
+          : "🏅 Top-10 season! Enter your initials";
+      $("hs-entry-row").hidden = false;
+      $("hs-initials").value = store.lastIni || "";
+    }
+
+    $("grade-badge").className = "grade-badge " + r.grade.cls;
+    $("grade-badge").textContent = r.grade.letter;
+    $("result-record").textContent = `${r.w}–${r.d}–${r.l}`;
+    $("result-pts").textContent = `${r.pts} pts`;
+    $("result-title").textContent =
+      r.pts === 114 ? "THE PERFECT INVINCIBLES" : r.l === 0 ? "⭐ INVINCIBLE — unbeaten all season" : r.grade.title;
+    const capLine = $("result-cap");
+    if (state.mode === "cap") {
+      capLine.textContent = `Spent: £${state.spent}M / £${SALARY_CAP}M`;
+      capLine.hidden = false;
+    } else {
+      capLine.hidden = true;
+    }
+
+    // lineup with fit emoji
+    const lu = $("result-lineup");
+    lu.innerHTML = "";
+    POSITIONS.forEach((pos, i) => {
+      const slot = state.roster[i];
+      const ap = slot ? adjustedPlayer(slot) : null;
+      const div = document.createElement("div");
+      div.className = "rl-slot";
+      div.innerHTML = `<div class="rl-pos">${pos}</div>
+        <div class="rl-name">${slot.player.n}</div>
+        <div class="rl-fit">${fitEmoji(ap.fit)}</div>`;
+      lu.appendChild(div);
+    });
+
+    $("result-mvp").textContent = r.mvp.name;
+    $("result-chem").textContent = Math.round(r.chem.mult * 100) + "%";
+    $("result-streak").textContent = r.longestUnbeaten + (r.longestUnbeaten === 1 ? " match" : " matches");
+    $("result-weak").textContent = r.weakness;
+
+    // Pro Scout Mode payoff — reveal the ratings you drafted blind.
+    const reveal = $("scout-reveal");
+    if (state.pro) {
+      const list = $("reveal-list");
+      list.innerHTML = "";
+      // Column header so each number's stat is clear.
+      const head = document.createElement("div");
+      head.className = "reveal-row reveal-head";
+      head.innerHTML =
+        `<div class="reveal-id"></div>` +
+        `<div class="reveal-ratings">` +
+        ["ATT", "DEF", "PAS", "PHY", "FIN"].map((k) => `<span class="rk">${k}</span>`).join("") +
+        `</div>`;
+      list.appendChild(head);
+      POSITIONS.forEach((pos, i) => {
+        const p = state.roster[i].player;
+        const row = document.createElement("div");
+        row.className = "reveal-row";
+        const cell = (label, val) => {
+          const cls = val >= 86 ? "hi" : val < 68 ? "lo" : "";
+          return `<span class="rv ${cls}" title="${label}">${val}</span>`;
+        };
+        row.innerHTML = `
+          <div class="reveal-id">
+            <span class="reveal-pos">${pos}</span>
+            <span class="reveal-name">${p.n}</span>
+            <span class="reveal-meta">${formatHeight(p.hi)} · ${p.a}</span>
+          </div>
+          <div class="reveal-ratings">
+            ${cell("Attacking", p.atk)}${cell("Defending", p.def)}${cell("Passing", p.pas)}${cell("Physical", p.phy)}${cell("Finishing", p.fin)}
+          </div>`;
+        list.appendChild(row);
+      });
+      reveal.hidden = false;
+    } else {
+      reveal.hidden = true;
+    }
+
+    const cl = $("chem-list");
+    cl.innerHTML = "";
+    r.chem.breakdown
+      .slice()
+      .sort((a, b) => b.delta - a.delta)
+      .forEach((b) => {
+        const li = document.createElement("li");
+        li.className = b.kind;
+        const sign = b.delta >= 0 ? "+" : "";
+        li.innerHTML = `<span>${b.label}</span><span class="cd">${sign}${Math.round(b.delta * 100)}%</span>`;
+        cl.appendChild(li);
+      });
+
+    // Europe gate — qualify on points, or miss out entirely.
+    state.playoffs = null;
+    state.seedNum = seedForPts(r.pts);
+    const made = state.seedNum > 0;
+    $("btn-playoffs").hidden = !made;
+    $("missed-note").hidden = made;
+
+    $("share-toast").textContent = "";
+    show("screen-result");
+    if (r.l === 0) confetti();
+  }
+
+  // ====================== European cup ======================
+  function runPlayoffs() {
+    if (!state || !state.result || !state.seedNum) return;
+    const r = state.result;
+    const po = simulateCup(r, state.seedNum, state.seed);
+    state.playoffs = po;
+
+    $("po-seed").innerHTML = `Qualified for Europe as the <b>#${po.seed} seed</b> (${r.w}–${r.d}–${r.l}, ${r.pts} pts)`;
+    const bracket = $("bracket");
+    bracket.innerHTML = "";
+    $("po-outcome").innerHTML = "";
+    $("po-actions").hidden = true;
+    $("po-toast").textContent = "";
+    show("screen-playoffs");
+
+    // Build the (hidden) round rows, then reveal one at a time.
+    const rows = po.rounds.map((s) => {
+      const div = document.createElement("div");
+      div.className = "po-series " + (s.won ? "win" : "loss");
+      div.innerHTML = `
+        <div>
+          <div class="po-round">${s.name}</div>
+          <div class="po-opp">vs ${s.opp}</div>
+        </div>
+        <div class="po-right">
+          <div class="po-score">${s.score}</div>
+          <div class="po-badge">${s.won ? "THROUGH" : "KNOCKED OUT"}</div>
+        </div>`;
+      bracket.appendChild(div);
+      return div;
+    });
+
+    let idx = 0;
+    const reveal = () => {
+      if (idx < rows.length) {
+        rows[idx].classList.add("show");
+        idx++;
+        setTimeout(reveal, 850);
+      } else {
+        finishPlayoffs(po);
+      }
+    };
+    setTimeout(reveal, 350);
+  }
+
+  function finishPlayoffs(po) {
+    const store = loadStore();
+    if (po.champion) {
+      store.trophies = (store.trophies || 0) + 1;
+      if (state.result.pts === 114) store.doubles = (store.doubles || 0) + 1;
+      // If this season is already on its board, stamp the trophy on its entry.
+      const board = state.mode === "cap" ? "cap" : "classic";
+      const list = board === "cap" ? store.scoresCap : store.scores;
+      if (state.scoreTs && Array.isArray(list)) {
+        const sc = list.find((s) => s.ts === state.scoreTs);
+        if (sc) {
+          sc.ring = true;
+          list.sort(sortScores);
+          submitGlobalScore(sc, board);
+        }
+      }
+    }
+    saveStore(store);
+
+    const out = $("po-outcome");
+    if (po.champion) {
+      const perfect = state.result.pts === 114;
+      out.innerHTML = `<div class="po-banner champ">🏆 CHAMPIONS OF EUROPE
+        <span class="po-sub">${perfect ? "38-0-0 AND the cup — immortality." : "The spine held. Glory."}</span></div>`;
+      confetti();
+    } else {
+      out.innerHTML = `<div class="po-banner out">Knocked out in the ${po.exitRound}
+        <span class="po-sub">A brave run — but Europe slipped away.</span></div>`;
+    }
+    $("po-actions").hidden = false;
+  }
+
+  function buildShareText() {
+    const r = state.result;
+    const fits = POSITIONS.map((pos, i) => fitEmoji(adjustedPlayer(state.roster[i]).fit)).join("");
+    const tag = state.mode === "cap" ? "Transfer Budget" : "Endless";
+    let line =
+      `⚽ THE INVINCIBLES — ${tag}\n` +
+      `${r.w}–${r.d}–${r.l}  ·  ${r.pts} pts  ·  Grade ${r.grade.letter} (${r.grade.title})\n` +
+      `Spine: ${fits}\n` +
+      `Chemistry ${Math.round(r.chem.mult * 100)}%  ·  Best unbeaten run ${r.longestUnbeaten}`;
+    if (state.playoffs) {
+      const po = state.playoffs;
+      line += po.champion
+        ? `\n🏆 CHAMPIONS OF EUROPE (#${po.seed} seed)`
+        : `\nEurope: out in the ${po.exitRound} (#${po.seed} seed)`;
+    }
+    return line + `\nCan you go 38-0-0?`;
+  }
+
+  async function share() {
+    const text = buildShareText();
+    // Post feedback to whichever screen's toast is visible.
+    const toast = $("screen-playoffs").classList.contains("active") ? $("po-toast") : $("share-toast");
+    try {
+      if (navigator.share) {
+        await navigator.share({ text });
+        return;
+      }
+    } catch {}
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.textContent = "Copied to clipboard!";
+    } catch {
+      toast.textContent = text;
+    }
+  }
+
+  function confetti() {
+    const colors = ["#ffd24a", "#22c55e", "#86efac", "#60a5fa", "#f87171"];
+    for (let i = 0; i < 80; i++) {
+      const c = document.createElement("div");
+      c.className = "confetti";
+      c.style.left = Math.random() * 100 + "vw";
+      c.style.background = colors[i % colors.length];
+      c.style.animation = `fall ${1.4 + Math.random() * 1.6}s ${Math.random()}s ease-in forwards`;
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 3600);
+    }
+  }
+
+  // ====================== home ======================
+  function renderHome() {
+    const store = loadStore();
+    const chips = [
+      ["Best points", store.bestPts ? `${store.bestPts} pts` : "—"],
+      ["Trophies", store.trophies || 0],
+      ["Invincible seasons", store.perfects || 0],
+      ["Seasons", store.played || 0],
+    ];
+    $("home-records").innerHTML = chips
+      .map((c) => `<div class="record-chip"><div class="rc-v">${c[1]}</div><div class="rc-k">${c[0]}</div></div>`)
+      .join("");
+    $("pro-toggle").checked = !!store.proMode;
+
+    renderBoards();
+    fetchGlobalScores();
+  }
+
+  function boardRow(s, i) {
+    // Server data reaches innerHTML — sanitize every field.
+    const ini = String(s.ini || "???").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3) || "???";
+    const pts = Math.max(0, Math.min(114, Math.round(Number(s.pts) || 0)));
+    const streak = Math.max(0, Math.min(38, Math.round(Number(s.streak) || 0)));
+    return (
+      `<div class="hs-line${i === 0 ? " first" : ""}"><span>${i + 1}</span>` +
+      `<span class="h-ini">${ini}</span><span class="hv">${pts} pts</span>` +
+      `<span>${streak}U</span><span>${s.ring === true ? "🏆" : "—"}</span></div>`
+    );
+  }
+
+  function boardHTML(title, scores, emptyMsg) {
+    return (
+      `<div class="hs-head">${title}</div>` +
+      `<div class="hs-board">` +
+      `<div class="hs-line head"><span>#</span><span>Player</span><span>Pts</span><span>Run</span><span>Cup</span></div>` +
+      (scores.length ? scores.map(boardRow).join("") : `<div class="hs-empty">${emptyMsg}</div>`) +
+      `</div>`
+    );
+  }
+
+  function renderBoards() {
+    const store = loadStore();
+    const tab = store.boardTab === "cap" ? "cap" : "classic";
+    const local = getScores(store, tab);
+    const capEmpty = "No budget-mode scores yet — be the first!";
+    const tabBtn = (id, label, on) =>
+      `<button type="button" id="${id}" class="hs-tab${on ? " active" : ""}">${label}</button>`;
+    let html =
+      `<div class="hs-tabs">` +
+      tabBtn("hs-tab-classic", "⚽ Classic", tab === "classic") +
+      tabBtn("hs-tab-cap", "💰 Budget", tab === "cap") +
+      `</div>`;
+    const global = globalScores[tab];
+    if (global)
+      html += boardHTML(
+        "🌍 Global Top 10",
+        global.slice(0, HS_MAX),
+        tab === "cap" ? capEmpty : "No global scores yet — be the first!"
+      );
+    else if (globalStatus === "unconfigured")
+      html +=
+        `<div class="hs-head">🌍 Global Top 10</div>` +
+        `<div class="hs-board"><div class="hs-empty">Not connected yet — in Vercel: Storage → your Redis database → Connect to Project, then Redeploy (see README).</div></div>`;
+    html += boardHTML(
+      global ? "📱 This device" : "🏅 High Scores",
+      local,
+      tab === "cap" ? capEmpty : "No scores yet — sim a season to claim the board."
+    );
+    $("highscores").innerHTML = html;
+  }
+
+  // ====================== wiring ======================
+  // Board tabs are re-created by renderBoards' innerHTML, so delegate the
+  // clicks from the stable container. No refetch — just re-render.
+  $("highscores").addEventListener("click", (e) => {
+    const btn = e.target && e.target.closest ? e.target.closest(".hs-tab") : null;
+    if (!btn) return;
+    const s = loadStore();
+    s.boardTab = btn.id === "hs-tab-cap" ? "cap" : "classic";
+    saveStore(s);
+    renderBoards();
+  });
+  $("btn-endless").addEventListener("click", () => newGame("endless"));
+  $("btn-cap").addEventListener("click", () => newGame("cap"));
+  $("pro-toggle").addEventListener("change", (e) => {
+    const s = loadStore();
+    s.proMode = e.target.checked;
+    saveStore(s);
+  });
+  $("btn-how").addEventListener("click", () => show("screen-how"));
+  $("btn-how-back").addEventListener("click", () => { renderHome(); show("screen-home"); });
+  $("btn-quit").addEventListener("click", () => { renderHome(); show("screen-home"); });
+  $("btn-reroll").addEventListener("click", reroll);
+  $("btn-wild").addEventListener("click", openWild);
+  $("token-reroll").addEventListener("click", reroll);
+  $("token-wild").addEventListener("click", openWild);
+  $("btn-hs-save").addEventListener("click", saveHighScore);
+  $("hs-initials").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") saveHighScore();
+  });
+  $("btn-wild-cancel").addEventListener("click", () => show("screen-draft"));
+  $("wild-search").addEventListener("input", (e) => renderWildList(e.target.value));
+  $("btn-sim").addEventListener("click", runSimulation);
+  $("btn-share").addEventListener("click", share);
+  $("btn-again").addEventListener("click", () => newGame(state.mode));
+  $("btn-home").addEventListener("click", () => { renderHome(); show("screen-home"); });
+  $("btn-playoffs").addEventListener("click", runPlayoffs);
+  $("btn-po-share").addEventListener("click", share);
+  $("btn-po-again").addEventListener("click", () => newGame(state.mode));
+  $("btn-po-home").addEventListener("click", () => { renderHome(); show("screen-home"); });
+
+  renderHome();
+
+  // Vercel Web Analytics — the loader only exists when served from Vercel,
+  // so inject it there and skip it on GitHub Pages / local files.
+  if (/\.vercel\.app$/.test(location.hostname)) {
+    const s = document.createElement("script");
+    s.defer = true;
+    s.src = "/_vercel/insights/script.js";
+    document.head.appendChild(s);
+  }
+})();
+
+</script>
+  
+  
+</body>
+</html>
