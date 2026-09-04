@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0b0e1a" />
   <title>THE INVINCIBLES</title>
-  <meta name="description" content="Draft a five-man spine of Premier League legends and simulate a 38-match season. Can you go 38–0–0?" />
+  <meta name="description" content="Sign a five-man spine of Premier League legends and simulate a 38-match season. Can you go 38–0–0?" />
   <style>
 /* ============================================================================
  * THE INVINCIBLES — styles
@@ -117,6 +117,7 @@ body::before {
 }
 .link-btn:hover { color: var(--ink); border-color: var(--gold); }
 a.link-btn { text-decoration: none; display: inline-block; }
+.home-links { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; }
 .icon-btn {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -139,7 +140,7 @@ a.link-btn { text-decoration: none; display: inline-block; }
 }
 .logo span {
   display: block;
-  background: linear-gradient(135deg, var(--accent), var(--gold));
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 70%, var(--gold) 100%), var(--gold));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -216,7 +217,7 @@ a.link-btn { text-decoration: none; display: inline-block; }
   padding: 10px 8px;
 }
 .record-chip .rc-v { font-size: 20px; font-weight: 800; color: var(--gold); }
-.record-chip .rc-k { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+.record-chip .rc-k { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.3; }
 
 /* ===================== HIGH SCORES ===================== */
 .highscores { margin-top: 18px; width: 100%; max-width: 420px; margin-left: auto; margin-right: auto; }
@@ -235,14 +236,16 @@ a.link-btn { text-decoration: none; display: inline-block; }
   white-space: nowrap;
   cursor: pointer;
 }
-.hs-tab:not(.active) { filter: saturate(0.4); opacity: 0.7; }
-.hs-tab.active { border-color: var(--gold); color: var(--gold); background: rgba(255, 210, 74, 0.12); }
+.hs-tab:not(.active) { filter: saturate(0.4); opacity: 0.9; }
+.hs-tab:not(.active):hover { border-color: var(--muted); }
+.hs-tab.active { border-color: var(--accent); color: var(--accent2); background: rgba(34, 197, 94, 0.12); }
 .hs-head { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
 .hs-board { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 6px 14px; text-align: left; }
 .hs-board + .hs-head { margin-top: 16px; }
 .hs-line { display: grid; grid-template-columns: 24px 1fr 62px 56px 34px; gap: 6px; padding: 6px 0; font-size: 14px; align-items: center; }
 .hs-line > :nth-child(3), .hs-line > :nth-child(4) { text-align: right; font-variant-numeric: tabular-nums; }
 .hs-line > :nth-child(5) { text-align: center; }
+.hs-line:not(.head) > :nth-child(4) { color: var(--accent2); font-weight: 700; }
 .hs-line:not(.head) > :nth-child(5) { font-size: 17px; line-height: 1; }
 .hs-line + .hs-line { border-top: 1px solid var(--line); }
 .hs-line.head { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -318,7 +321,7 @@ a.link-btn { text-decoration: none; display: inline-block; }
   border-radius: 12px;
   padding: 12px;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 16px;
 }
@@ -340,9 +343,16 @@ a.link-btn { text-decoration: none; display: inline-block; }
 .slot .slot-pos { font-size: 12px; font-weight: 800; color: var(--accent2); }
 .slot .slot-empty { font-size: 11px; color: rgba(134, 239, 172, 0.55); margin-top: 4px; }
 .slot.filled { border-style: solid; border-color: var(--accent); background: rgba(34,197,94,0.12); }
-.slot .slot-name { font-size: 11px; font-weight: 700; line-height: 1.15; margin-top: 3px; }
-.slot .slot-era { font-size: 10px; color: var(--muted); }
+.slot .slot-name { font-size: 11px; font-weight: 700; line-height: 1.15; margin-top: 3px; overflow-wrap: anywhere; }
+.slot .slot-era { font-size: 10px; color: rgba(238, 241, 255, 0.6); }
 .slot.target { border-style: solid; border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+.slot.filled.misfit { border-color: var(--gold); background: rgba(255, 210, 74, 0.10); }
+.slot.filled.misfit-bad { border-color: var(--bad); background: rgba(248, 113, 113, 0.10); }
+.slot .slot-fit { font-size: 9px; font-weight: 800; margin-top: 2px; color: var(--gold); }
+.slot.misfit-bad .slot-fit { color: var(--bad); }
+/* halfway line + centre circle so the tray reads as a pitch */
+.court::before { content: ""; position: absolute; left: 50%; top: 8px; bottom: 8px; width: 2px; background: rgba(255,255,255,0.07); transform: translateX(-50%); }
+.court::after { content: ""; position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; border: 2px solid rgba(255,255,255,0.07); border-radius: 50%; transform: translate(-50%,-50%); }
 
 /* slot machine */
 .draft-floor { flex: 1; display: flex; flex-direction: column; }
@@ -417,7 +427,7 @@ a.link-btn { text-decoration: none; display: inline-block; }
   background: var(--panel2);
 }
 .rv.hi { color: var(--good); }
-.rv.lo { color: var(--bad); }
+.rv.lo { color: #d98d95; }
 
 /* position chooser shown after tapping a card */
 .pos-choose { display: none; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
@@ -512,14 +522,14 @@ a.link-btn { text-decoration: none; display: inline-block; }
 .result-title { color: var(--muted); margin-bottom: 18px; font-weight: 600; }
 .result-cap { color: var(--gold); font-weight: 700; margin-bottom: 10px; }
 
-.result-lineup { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 18px; }
+.result-lineup { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-bottom: 18px; }
 .rl-slot { background: var(--panel); border-radius: 8px; padding: 8px 4px; border: 1px solid var(--line); }
 .rl-slot .rl-pos { font-size: 10px; font-weight: 800; color: var(--accent2); }
-.rl-slot .rl-name { font-size: 10px; font-weight: 700; line-height: 1.15; margin-top: 3px; }
+.rl-slot .rl-name { font-size: 10px; font-weight: 700; line-height: 1.15; margin-top: 3px; overflow-wrap: anywhere; }
 .rl-slot .rl-fit { font-size: 13px; margin-top: 3px; }
 
 .fit-legend { font-size: 11px; color: var(--muted); margin: -8px 0 14px; }
-.result-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.result-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }
 .stat { background: var(--panel); border-radius: 10px; padding: 10px; text-align: left; }
 .stat-k { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
 .stat-v { font-size: 15px; font-weight: 800; }
@@ -612,6 +622,7 @@ a.link-btn { text-decoration: none; display: inline-block; }
   .btn-sim { width: 100%; max-width: 660px; align-self: center; }
   .candidates { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; align-items: start; }
   .candidates .pcard.open { grid-column: 1 / -1; }
+  .candidates .pcard.open .ratings, .candidates .pcard.open .pos-choose { max-width: 660px; width: 100%; margin-left: auto; margin-right: auto; }
   .wild-panel { max-width: 900px; width: 100%; margin: 0 auto; }
   .wild-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; align-items: start; }
   .wild-list .pcard.open { grid-column: 1 / -1; }
@@ -630,12 +641,12 @@ a.link-btn { text-decoration: none; display: inline-block; }
     <section id="screen-home" class="screen active">
       <div class="home-inner">
         <h1 class="logo">THE<span>INVINCIBLES</span></h1>
-        <p class="tagline">Draft a five-man spine. Survive 38 matches. Chase the impossible&nbsp;<b>38–0–0</b>.</p>
+        <p class="tagline">Sign a five-man spine. Survive 38 matches. Chase the impossible&nbsp;<b>38–0–0</b>.</p>
 
         <div class="mode-buttons">
           <button class="btn btn-primary" id="btn-endless">
             <span class="btn-title">⚽ Endless Mode</span>
-            <span class="btn-sub">Fresh random draft, play forever</span>
+            <span class="btn-sub">Fresh random signings, play forever</span>
           </button>
           <button class="btn btn-secondary" id="btn-cap">
             <span class="btn-title">💰 Transfer Budget Mode</span>
@@ -648,7 +659,7 @@ a.link-btn { text-decoration: none; display: inline-block; }
           <span class="pro-switch"></span>
           <span class="pro-text">
             <b>🕶️ Pro Scout Mode</b>
-            <small>Stats hidden — judge on name, club, era, position &amp; height alone</small>
+            <small>Stats hidden — scout on name, club, era, position &amp; height alone</small>
           </span>
         </label>
 
@@ -656,8 +667,10 @@ a.link-btn { text-decoration: none; display: inline-block; }
 
         <div class="highscores" id="highscores"></div>
 
-        <button class="link-btn" id="btn-how">How to play</button>
-        <a class="link-btn" href="../">🏀 Play PERFECT SEASON</a>
+        <div class="home-links">
+          <button class="link-btn" id="btn-how">How to play</button>
+          <a class="link-btn" href="../">🏀 Play PERFECT SEASON</a>
+        </div>
         <p class="version">v1.0</p>
       </div>
     </section>
@@ -686,7 +699,7 @@ a.link-btn { text-decoration: none; display: inline-block; }
           <span id="pick-label">Signing 1 / 5</span>
           <span id="budget-hud" class="budget-hud" hidden></span>
           <div class="tokens">
-            <button type="button" class="token" id="token-reroll" title="Reroll team">🔄 <b id="reroll-count">3</b></button>
+            <button type="button" class="token" id="token-reroll" title="Reroll club">🔄 <b id="reroll-count">3</b></button>
             <button type="button" class="token" id="token-wild" title="Wildcard pick">⭐ <b id="wild-count">1</b></button>
           </div>
         </div>
@@ -705,7 +718,7 @@ a.link-btn { text-decoration: none; display: inline-block; }
         <div class="candidates" id="candidates"></div>
 
         <div class="draft-actions">
-          <button class="btn btn-token" id="btn-reroll">🔄 Reroll team</button>
+          <button class="btn btn-token" id="btn-reroll">🔄 Reroll club</button>
           <button class="btn btn-token" id="btn-wild">⭐ Wildcard pick</button>
         </div>
       </div>
@@ -2012,9 +2025,13 @@ function simulateCup(result, seed, baseSeed) {
       const r = state.roster[i];
       if (r) {
         slot.classList.add("filled");
+        const fit = positionFit(r.player, pos);
+        // Surface expensive mistakes where they were made: off-role signings
+        // get flagged on the pitch, an outfielder in goal screams red.
+        if (fit < 0.9) slot.classList.add(fit <= 0.55 ? "misfit-bad" : "misfit");
         slot.innerHTML = `<span class="slot-pos">${pos}</span>
           <span class="slot-name">${r.player.n}</span>
-          <span class="slot-era">${r.player.d}</span>`;
+          <span class="slot-era">${r.player.d}</span>${fit < 0.9 ? `<span class="slot-fit">${fit <= 0.55 ? "⚠ wrong role" : "⚠ off-role"}</span>` : ""}`;
       } else {
         // Highlight eligible slots only when the hint means something — with
         // every slot open, a universal glow conveys nothing.
@@ -2026,7 +2043,7 @@ function simulateCup(result, seed, baseSeed) {
   }
 
   function ratingCell(key, label, val) {
-    const cls = val >= 86 ? "hi" : val < 68 ? "lo" : "";
+    const cls = val >= 86 ? "hi" : val < 50 ? "lo" : "";
     return `<div class="rbar"><span class="rk">${label}</span><span class="rv ${cls}">${Math.round(val)}</span></div>`;
   }
 
@@ -2041,7 +2058,7 @@ function simulateCup(result, seed, baseSeed) {
     // name, club, era, position and listed height alone.
     const meta = state.pro
       ? `${formatHeight(player.hi)} · ${player.t} · ${player.d}`
-      : `${formatHeight(player.hi)} · ${player.t} · ${player.d} · <span class="pcard-arch">${player.a}</span>`;
+      : `${formatHeight(player.hi)} · ${player.t} · ${player.d} <span class="pcard-arch">· ${player.a}</span>`;
     const body = state.pro
       ? `<div class="scout-note">🕶️ Scout's report only — trust your eye.</div>`
       : `<div class="ratings">
@@ -2115,7 +2132,7 @@ function simulateCup(result, seed, baseSeed) {
     renderTokens();
     $("btn-sim").disabled = state.pick < 5;
     $("spinner-label").textContent =
-      state.mode === "cap" ? "TRANSFER BUDGET DRAFT" : "NOW SIGNING";
+      state.mode === "cap" ? "TRANSFER WINDOW" : "NOW SIGNING";
     const label = `${state.current.decade} · ${state.current.team}`;
     if (animate) {
       animateSpin(() => {
@@ -2292,10 +2309,14 @@ function simulateCup(result, seed, baseSeed) {
     const qualifies = scoreQualifies(getScores(store, board), r.pts, r.longestUnbeaten);
     $("hs-entry").hidden = !qualifies;
     if (qualifies) {
+      // A relegation season can still "qualify" on a thin board — log it
+      // without the celebration.
       $("hs-entry-title").textContent =
-        board === "cap"
-          ? "🏅 Top-10 budget season! Enter your initials"
-          : "🏅 Top-10 season! Enter your initials";
+        r.pts < 58
+          ? "Season logged in your top 10 — enter your initials"
+          : board === "cap"
+            ? "🏅 Top-10 budget season! Enter your initials"
+            : "🏅 Top-10 season! Enter your initials";
       $("hs-entry-row").hidden = false;
       $("hs-initials").value = store.lastIni || "";
     }
@@ -2352,7 +2373,7 @@ function simulateCup(result, seed, baseSeed) {
         const row = document.createElement("div");
         row.className = "reveal-row";
         const cell = (label, val) => {
-          const cls = val >= 86 ? "hi" : val < 68 ? "lo" : "";
+          const cls = val >= 86 ? "hi" : val < 50 ? "lo" : "";
           return `<span class="rv ${cls}" title="${label}">${val}</span>`;
         };
         row.innerHTML = `
@@ -2390,6 +2411,9 @@ function simulateCup(result, seed, baseSeed) {
     const made = state.seedNum > 0;
     $("btn-playoffs").hidden = !made;
     $("missed-note").hidden = made;
+    // Keep a green primary action on screen even when Europe is missed.
+    $("btn-again").classList.toggle("btn-primary", !made);
+    $("btn-again").classList.toggle("btn-secondary", made);
 
     $("share-toast").textContent = "";
     show("screen-result");
@@ -2528,7 +2552,7 @@ function simulateCup(result, seed, baseSeed) {
     const chips = [
       ["Best points", store.bestPts ? `${store.bestPts} pts` : "—"],
       ["Trophies", store.trophies || 0],
-      ["Invincible seasons", store.perfects || 0],
+      ["Invincibles", store.perfects || 0],
       ["Seasons", store.played || 0],
     ];
     $("home-records").innerHTML = chips
@@ -2548,7 +2572,7 @@ function simulateCup(result, seed, baseSeed) {
     return (
       `<div class="hs-line${i === 0 ? " first" : ""}"><span>${i + 1}</span>` +
       `<span class="h-ini">${ini}</span><span class="hv">${pts} pts</span>` +
-      `<span>${streak}U</span><span>${s.ring === true ? "🏆" : "—"}</span></div>`
+      `<span>${streak}</span><span>${s.ring === true ? "🏆" : "—"}</span></div>`
     );
   }
 
